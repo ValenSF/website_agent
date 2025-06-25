@@ -20,8 +20,12 @@
     "storybook:build": "storybook build"
   },
   "dependencies": {
-    "@mantine/core": "8.1.0",
-    "@mantine/hooks": "8.1.0",
+    "@mantine/carousel": "^8.1.1",
+    "@mantine/core": "^8.1.1",
+    "@mantine/hooks": "^8.1.1",
+    "@tabler/icons-react": "^3.34.0",
+    "embla-carousel-react": "^8.6.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2"
