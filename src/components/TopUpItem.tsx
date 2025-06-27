@@ -145,7 +145,7 @@ export default function TopUpItem({
         </Text>
       </Box>
 
-      <style jsx>{`
+      <style>{`
         @keyframes sparkle {
           0%, 100% { opacity: 0.5; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.5); }
