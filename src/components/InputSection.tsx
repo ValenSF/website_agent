@@ -133,7 +133,7 @@ export default function InputSection({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundImage: 'url(/src/img/board.png)',
+        backgroundImage: 'url(/img/board.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -327,7 +327,7 @@ export default function InputSection({
               }}
             >
               <img
-                src="/src/img/konfirmasi.png"
+                src="/img/konfirmasi.png"
                 alt="Konfirmasi"
                 style={{
                   width: '200px',

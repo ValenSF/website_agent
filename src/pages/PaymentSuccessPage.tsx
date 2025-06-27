@@ -96,7 +96,7 @@ export default function SuccessPage() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '30px 20px',
-        backgroundImage: 'url(/src/img/background.jpg)',
+        backgroundImage: 'url(/img/background.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -128,7 +128,7 @@ export default function SuccessPage() {
             }}>
               {/* Shine background */}
               <img
-                src="/src/img/shine.png"
+                src="/img/shine.png"
                 alt="Shine"
                 style={{
                   position: 'absolute',
@@ -144,7 +144,7 @@ export default function SuccessPage() {
               
               {/* Cat Image */}
               <img
-                src="/src/img/cat.png"
+                src="/img/cat.png"
                 alt="Cat Character"
                 style={{
                   width: '250px',
@@ -188,7 +188,7 @@ export default function SuccessPage() {
           
           {/* Board Background - Moved down */}
           <img
-            src="/src/img/papan.png"
+            src="/img/papan.png"
             alt="Board Background"
             style={{
               position: 'absolute',
@@ -203,7 +203,7 @@ export default function SuccessPage() {
           
           {/* Board Top (Header) - Moved down */}
           <img
-            src="/src/img/papanatas.png"
+            src="/img/papanatas.png"
             alt="Board Top"
             style={{
               position: 'absolute',
@@ -242,7 +242,7 @@ export default function SuccessPage() {
                 animation: 'bounce 1s ease-in-out infinite alternate'
               }}>
                 <img
-                  src="/src/img/cekhijau.png"
+                  src="/img/cekhijau.png"
                   alt="Success Check"
                   style={{
                     width: '140px',
@@ -376,7 +376,7 @@ export default function SuccessPage() {
                   }}
                 >
                   <img
-                    src="/src/img/kembali.png"
+                    src="/img/kembali.png"
                     alt="Kembali"
                     style={{
                       width: '120px',

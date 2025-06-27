@@ -221,7 +221,7 @@ export default function App() {
           minHeight: '100vh',
           maxWidth: 400, // Changed dari 600 ke 400 untuk konsisten dengan QrisPage
           overflowX: 'hidden',
-          backgroundImage: 'url(/src/img/background.jpg)',
+          backgroundImage: 'url(/img/background.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

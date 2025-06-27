@@ -7,12 +7,12 @@ interface TopUpGridProps {
 }
 
 const topUpData = [
-  { image: '/src/img/coin.png', amount: '10000', topUpAmount: '100', description: 'TOP UP 100M', price: '(IDR 10.000)' },
-  { image: '/src/img/coin.png', amount: '15000', topUpAmount: '200', description: 'TOP UP 200M', price: '(IDR 15.000)' },
-  { image: '/src/img/coin.png', amount: '21000', topUpAmount: '300', description: 'TOP UP 300M', price: '(IDR 21.000)' },
-  { image: '/src/img/coin.png', amount: '28000', topUpAmount: '400', description: 'TOP UP 400M', price: '(IDR 28.000)' },
-  { image: '/src/img/coin.png', amount: '34000', topUpAmount: '500', description: 'TOP UP 500M', price: '(IDR 34.000)' },
-  { image: '/src/img/coin.png', amount: '41000', topUpAmount: '600', description: 'TOP UP 600M', price: '(IDR 41.000)' }
+   { image: '/img/coin.png', amount: '10000', topUpAmount: '100', description: 'TOP UP 100M', price: '(IDR 10.000)' }, // Changed path
+  { image: '/img/coin.png', amount: '15000', topUpAmount: '200', description: 'TOP UP 200M', price: '(IDR 15.000)' }, // Changed path
+  { image: '/img/coin.png', amount: '21000', topUpAmount: '300', description: 'TOP UP 300M', price: '(IDR 21.000)' }, // Changed path
+  { image: '/img/coin.png', amount: '28000', topUpAmount: '400', description: 'TOP UP 400M', price: '(IDR 28.000)' }, // Changed path
+  { image: '/img/coin.png', amount: '34000', topUpAmount: '500', description: 'TOP UP 500M', price: '(IDR 34.000)' }, // Changed path
+  { image: '/img/coin.png', amount: '41000', topUpAmount: '600', description: 'TOP UP 600M', price: '(IDR 41.000)' }  // Changed path
 ];
 
 export default function TopUpGrid({ isValidated, onImageClick }: TopUpGridProps) {

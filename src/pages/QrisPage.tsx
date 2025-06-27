@@ -228,7 +228,7 @@ export default function QrisPage() {
         maxWidth: 400,
         position: 'relative',
         zIndex: 2,
-        backgroundImage: 'url(/src/img/background.jpg)',
+        backgroundImage: 'url(/img/background.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -326,7 +326,7 @@ export default function QrisPage() {
           }}>
             {/* QRIS Frame menggunakan papanqris.png */}
             <img
-              src="/src/img/papanqris.png"
+              src="/img/papanqris.png"
               alt="QRIS Frame with Cat"
               style={{
                 width: '100%',
@@ -345,7 +345,7 @@ export default function QrisPage() {
             marginBottom: '20px'
           }}>
             <img
-              src="/src/img/papanbayar.png"
+              src="/img/papanbayar.png"
               alt="Payment Methods"
               style={{
                 width: '100%',

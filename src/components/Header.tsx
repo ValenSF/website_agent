@@ -5,12 +5,12 @@ export default function Header() {
     <Box style={{ 
       textAlign: 'center', 
       padding: '15px 10px',
-      background: 'transparent',
-      backdropFilter: 'blur(10px)',
       borderRadius: '0 0 20px 20px',
       margin: '0 auto 20px auto',
       maxWidth: 400, // Sama dengan QrisPage
       width: '100%'
+      // Removed: background: 'transparent'
+      // Removed: backdropFilter: 'blur(10px)'
     }}>
       
       {/* Cat Character - Adjusted size */}
@@ -18,7 +18,7 @@ export default function Header() {
         width: '100%',
         maxWidth: '400px', // Consistent dengan QrisPage
         height: '300px', // Reduced dari 350px
-        background: 'transparent',
+        // Removed: background: 'transparent'
         margin: '0 auto 0px',
         display: 'flex',
         alignItems: 'center',
@@ -29,7 +29,7 @@ export default function Header() {
       }}>
         {/* Shine background - Adjusted */}
         <img
-          src="/src/img/shine.png"
+          src="/img/shine.png"
           alt="Shine"
           style={{
             position: 'absolute',
@@ -44,7 +44,7 @@ export default function Header() {
           }}
         />
         <img
-          src="/src/img/cat.png"
+          src="/img/cat.png"
           alt="Cat Character"
           style={{
             width: '240px', // Reduced dari 280px
