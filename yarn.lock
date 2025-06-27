@@ -1646,6 +1646,54 @@ __metadata:
   languageName: node
   linkType: hard
 
+"Neo Agent Web@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "Neo Agent Web@workspace:."
+  dependencies:
+    "@eslint/js": "npm:^9.29.0"
+    "@ianvs/prettier-plugin-sort-imports": "npm:^4.4.2"
+    "@mantine/carousel": "npm:^8.1.1"
+    "@mantine/core": "npm:^8.1.1"
+    "@mantine/hooks": "npm:^8.1.1"
+    "@storybook/react": "npm:^8.6.12"
+    "@storybook/react-vite": "npm:^8.6.12"
+    "@tabler/icons-react": "npm:^3.34.0"
+    "@testing-library/dom": "npm:^10.4.0"
+    "@testing-library/jest-dom": "npm:^6.6.3"
+    "@testing-library/react": "npm:^16.3.0"
+    "@testing-library/user-event": "npm:^14.6.1"
+    "@types/node": "npm:^22.15.11"
+    "@types/react": "npm:^19.1.8"
+    "@types/react-dom": "npm:^19.1.6"
+    "@vitejs/plugin-react": "npm:^4.5.2"
+    embla-carousel-react: "npm:^8.6.0"
+    eslint: "npm:^9.29.0"
+    eslint-config-mantine: "npm:^4.0.3"
+    eslint-plugin-jsx-a11y: "npm:^6.10.2"
+    eslint-plugin-react: "npm:^7.37.5"
+    identity-obj-proxy: "npm:^3.0.0"
+    jsdom: "npm:^26.1.0"
+    postcss: "npm:^8.5.5"
+    postcss-preset-mantine: "npm:1.17.0"
+    postcss-simple-vars: "npm:^7.0.1"
+    prettier: "npm:^3.5.3"
+    prop-types: "npm:^15.8.1"
+    qrcode.react: "npm:^4.2.0"
+    react: "npm:^19.1.0"
+    react-dom: "npm:^19.1.0"
+    react-router-dom: "npm:^7.6.2"
+    storybook: "npm:^8.6.12"
+    storybook-dark-mode: "npm:^4.0.2"
+    stylelint: "npm:^16.20.0"
+    stylelint-config-standard-scss: "npm:^15.0.1"
+    typescript: "npm:^5.8.3"
+    typescript-eslint: "npm:^8.34.0"
+    vite: "npm:^6.3.5"
+    vite-tsconfig-paths: "npm:^5.1.4"
+    vitest: "npm:^3.2.3"
+  languageName: unknown
+  linkType: soft
+
 "abbrev@npm:^3.0.0":
   version: 3.0.1
   resolution: "abbrev@npm:3.0.1"
@@ -4286,54 +4334,6 @@ __metadata:
   checksum: 10c0/c40efb5e5296e7feb8e37155bde8eb70bc57d731b1f7d90e35a092fde403d7697c56fb49334d92d330d6f1ca29a98142036d6480a12681133a0a1453164cb2f0
   languageName: node
   linkType: hard
-
-"mantine-vite-template@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "mantine-vite-template@workspace:."
-  dependencies:
-    "@eslint/js": "npm:^9.29.0"
-    "@ianvs/prettier-plugin-sort-imports": "npm:^4.4.2"
-    "@mantine/carousel": "npm:^8.1.1"
-    "@mantine/core": "npm:^8.1.1"
-    "@mantine/hooks": "npm:^8.1.1"
-    "@storybook/react": "npm:^8.6.12"
-    "@storybook/react-vite": "npm:^8.6.12"
-    "@tabler/icons-react": "npm:^3.34.0"
-    "@testing-library/dom": "npm:^10.4.0"
-    "@testing-library/jest-dom": "npm:^6.6.3"
-    "@testing-library/react": "npm:^16.3.0"
-    "@testing-library/user-event": "npm:^14.6.1"
-    "@types/node": "npm:^22.15.11"
-    "@types/react": "npm:^19.1.8"
-    "@types/react-dom": "npm:^19.1.6"
-    "@vitejs/plugin-react": "npm:^4.5.2"
-    embla-carousel-react: "npm:^8.6.0"
-    eslint: "npm:^9.29.0"
-    eslint-config-mantine: "npm:^4.0.3"
-    eslint-plugin-jsx-a11y: "npm:^6.10.2"
-    eslint-plugin-react: "npm:^7.37.5"
-    identity-obj-proxy: "npm:^3.0.0"
-    jsdom: "npm:^26.1.0"
-    postcss: "npm:^8.5.5"
-    postcss-preset-mantine: "npm:1.17.0"
-    postcss-simple-vars: "npm:^7.0.1"
-    prettier: "npm:^3.5.3"
-    prop-types: "npm:^15.8.1"
-    qrcode.react: "npm:^4.2.0"
-    react: "npm:^19.1.0"
-    react-dom: "npm:^19.1.0"
-    react-router-dom: "npm:^7.6.2"
-    storybook: "npm:^8.6.12"
-    storybook-dark-mode: "npm:^4.0.2"
-    stylelint: "npm:^16.20.0"
-    stylelint-config-standard-scss: "npm:^15.0.1"
-    typescript: "npm:^5.8.3"
-    typescript-eslint: "npm:^8.34.0"
-    vite: "npm:^6.3.5"
-    vite-tsconfig-paths: "npm:^5.1.4"
-    vitest: "npm:^3.2.3"
-  languageName: unknown
-  linkType: soft
 
 "map-or-similar@npm:^1.5.0":
   version: 1.5.0
