@@ -1,4 +1,5 @@
-import { Box, Text, TextInput, Center, Button } from '@mantine/core';
+import { Box, Text, TextInput, Center } from '@mantine/core';
+import { useState } from 'react';
 
 interface InputSectionProps {
   neoId: string;
@@ -9,6 +10,7 @@ interface InputSectionProps {
   onValidation: () => void;
 }
 
+// Default Export - ini yang dibutuhkan App.tsx
 export default function InputSection({
   neoId,
   setNeoId,
@@ -17,169 +19,358 @@ export default function InputSection({
   isValidated,
   onValidation
 }: InputSectionProps) {
-  const inputStyles = {
-    root: { position: 'relative' as const },
-    label: { 
-      color: '#ffffff', 
-      fontWeight: 700, 
-      fontSize: '18px', 
-      marginBottom: '12px', 
-      textShadow: '0 1px 3px rgba(0,0,0,0.3)', 
-      letterSpacing: '0.5px' 
-    },
-    input: {
-      backgroundColor: 'rgba(255,255,255,0.95)', 
-      border: '3px solid rgba(255,255,255,0.3)', 
-      borderRadius: '16px', 
-      fontSize: '18px', 
-      padding: '16px 20px 16px 50px',
-      fontWeight: 500, 
-      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', 
-      boxShadow: '0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)',
-      '&:focus': { 
-        backgroundColor: '#ffffff', 
-        borderColor: '#4dabf7', 
-        boxShadow: '0 0 0 4px rgba(77, 171, 247, 0.3), 0 12px 40px rgba(77, 171, 247, 0.2)', 
-        transform: 'translateY(-3px) scale(1.02)' 
-      },
-      '&:hover': { 
-        backgroundColor: '#ffffff', 
-        transform: 'translateY(-2px)', 
-        boxShadow: '0 12px 40px rgba(0,0,0,0.15)' 
-      },
-      '&::placeholder': { color: '#999', opacity: 0.7 }
-    }
+  const [neoIdError, setNeoIdError] = useState('');
+  const [whatsappError, setWhatsappError] = useState('');
+
+  // Validasi hanya angka (no special characters, no spaces)
+  const validateNumberOnly = (value: string): boolean => {
+    const numberOnlyRegex = /^[0-9]*$/;
+    return numberOnlyRegex.test(value);
   };
 
-  const whatsappInputStyles = {
-    ...inputStyles,
-    input: {
-      ...inputStyles.input,
-      '&:focus': { 
-        backgroundColor: '#ffffff', 
-        borderColor: '#51cf66', 
-        boxShadow: '0 0 0 4px rgba(81, 207, 102, 0.3), 0 12px 40px rgba(81, 207, 102, 0.2)', 
-        transform: 'translateY(-3px) scale(1.02)' 
-      }
+  // Handler untuk Neo ID
+  const handleNeoIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value;
+    
+    // Cek validasi
+    if (value === '') {
+      setNeoId(value);
+      setNeoIdError('');
+      return;
+    }
+    
+    if (!validateNumberOnly(value)) {
+      setNeoIdError('Neo ID hanya boleh berisi angka');
+      return;
+    }
+    
+    if (value.length > 20) {
+      setNeoIdError('Neo ID maksimal 20 digit');
+      return;
+    }
+    
+    setNeoId(value);
+    setNeoIdError('');
+  };
+
+  // Handler untuk WhatsApp
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value;
+    
+    // Cek validasi
+    if (value === '') {
+      setWhatsapp(value);
+      setWhatsappError('');
+      return;
+    }
+    
+    if (!validateNumberOnly(value)) {
+      setWhatsappError('Nomor WhatsApp hanya boleh berisi angka');
+      return;
+    }
+    
+    if (value.length > 15) {
+      setWhatsappError('Nomor WhatsApp maksimal 15 digit');
+      return;
+    }
+    
+    if (value.length < 10) {
+      setWhatsappError('Nomor WhatsApp minimal 10 digit');
+      setWhatsapp(value);
+      return;
+    }
+    
+    setWhatsapp(value);
+    setWhatsappError('');
+  };
+
+  // Validasi sebelum konfirmasi
+  const handleValidation = () => {
+    let hasError = false;
+    
+    // Validasi Neo ID
+    if (!neoId.trim()) {
+      setNeoIdError('Neo ID wajib diisi');
+      hasError = true;
+    } else if (!validateNumberOnly(neoId)) {
+      setNeoIdError('Neo ID hanya boleh berisi angka');
+      hasError = true;
+    } else if (neoId.length < 3) {
+      setNeoIdError('Neo ID minimal 3 digit');
+      hasError = true;
+    }
+    
+    // Validasi WhatsApp
+    if (!whatsappNumber.trim()) {
+      setWhatsappError('Nomor WhatsApp wajib diisi');
+      hasError = true;
+    } else if (!validateNumberOnly(whatsappNumber)) {
+      setWhatsappError('Nomor WhatsApp hanya boleh berisi angka');
+      hasError = true;
+    } else if (whatsappNumber.length < 10) {
+      setWhatsappError('Nomor WhatsApp minimal 10 digit');
+      hasError = true;
+    }
+    
+    // Jika tidak ada error, lanjutkan validasi
+    if (!hasError) {
+      onValidation();
     }
   };
 
   return (
     <Box style={{
-      padding: '40px 32px',
-      background: 'linear-gradient(145deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-      margin: '32px 24px',
-      borderRadius: '24px',
-      boxShadow: '0 20px 60px rgba(102, 126, 234, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
-      border: '1px solid rgba(255,255,255,0.18)',
-      backdropFilter: 'blur(10px)',
+      padding: '20px',
+      margin: '20px 15px',
       position: 'relative',
-      overflow: 'hidden'
+      borderRadius: '20px'
     }}>
-      {/* Decorative elements */}
-      <div style={{
+      
+      {/* Board Background */}
+      <Box style={{
         position: 'absolute',
-        top: '-50%',
-        left: '-50%',
-        width: '200%',
-        height: '200%',
-        background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-        animation: 'float 6s ease-in-out infinite',
-        pointerEvents: 'none'
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: 'url(/src/img/board.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        borderRadius: '20px',
+        zIndex: 0
       }} />
 
-      <Text style={{
-        color: '#ffffff',
-        fontSize: '24px',
-        fontWeight: 700,
-        textAlign: 'center',
-        marginBottom: '24px',
-        textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-        letterSpacing: '0.5px'
+      {/* Content Container */}
+      <Box style={{
+        position: 'relative',
+        zIndex: 1,
+        padding: '25px 25px 30px'
       }}>
-        🎮 Masukkan Data Anda 🎮
-      </Text>
+        
+        <Text style={{
+          fontFamily: '"Klavika Bold", "Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          color: '#8B4513',
+          fontSize: '18px',
+          fontWeight: 700,
+          textAlign: 'center',
+          marginBottom: '30px',
+          marginTop: '-20px',
+          textShadow: '1px 1px 2px rgba(255,255,255,0.8)',
+          letterSpacing: '0.5px'
+        }}>
+          🎮 Masukkan Data Anda 🎮
+        </Text>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <TextInput
-          label="Neo ID"
-          placeholder="Masukkan Neo ID Anda"
-          value={neoId}
-          onChange={(e) => setNeoId(e.currentTarget.value)}
-          size="xl"
-          leftSection="👤"
-          styles={inputStyles}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Neo ID Input */}
+          <Box>
+            <TextInput
+              label="Neo ID"
+              placeholder="Masukkan Neo ID Anda (hanya angka)"
+              value={neoId}
+              onChange={handleNeoIdChange}
+              size="lg"
+              leftSection="👤"
+              error={neoIdError}
+              styles={{
+                root: { position: 'relative' },
+                label: { 
+                  fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  color: '#8B4513', 
+                  fontWeight: 700, 
+                  fontSize: '16px', 
+                  marginBottom: '8px',
+                  textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+                },
+                input: {
+                  fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  backgroundColor: neoIdError ? 'rgba(255,235,235,0.9)' : 'rgba(255,248,220,0.9)',
+                  border: neoIdError ? '3px solid #FF6B6B' : '3px solid #D2691E',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  padding: '12px 15px 12px 45px',
+                  fontWeight: 500,
+                  transition: 'all 0.3s ease',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+                  '&:focus': {
+                    backgroundColor: neoIdError ? 'rgba(255,235,235,0.9)' : '#FFF8DC',
+                    borderColor: neoIdError ? '#FF6B6B' : '#FF8C00',
+                    boxShadow: neoIdError 
+                      ? '0 0 0 3px rgba(255, 107, 107, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)'
+                      : '0 0 0 3px rgba(255, 140, 0, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)',
+                    transform: 'translateY(-2px)'
+                  },
+                  '&:hover': {
+                    backgroundColor: neoIdError ? 'rgba(255,235,235,0.9)' : '#FFF8DC',
+                    transform: 'translateY(-1px)',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.1)'
+                  },
+                  '&::placeholder': {
+                    fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                  }
+                },
+                error: {
+                  color: '#FF6B6B',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  marginTop: '5px'
+                }
+              }}
+            />
+            {/* Success Indicator */}
+            {neoId && !neoIdError && neoId.length >= 3 && (
+              <Text style={{
+                color: '#32CD32',
+                fontSize: '12px',
+                fontWeight: 600,
+                marginTop: '5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                ✅ Neo ID valid
+              </Text>
+            )}
+          </Box>
 
-        <TextInput
-          label="No WhatsApp"
-          placeholder="Masukkan nomor WhatsApp"
-          value={whatsappNumber}
-          onChange={(e) => setWhatsapp(e.currentTarget.value)}
-          size="xl"
-          leftSection="📱"
-          styles={whatsappInputStyles}
-        />
-      </div>
+          {/* WhatsApp Input */}
+          <Box>
+            <TextInput
+              label="No WhatsApp"
+              placeholder="Masukkan nomor WhatsApp (hanya angka)"
+              value={whatsappNumber}
+              onChange={handleWhatsappChange}
+              size="lg"
+              leftSection="📱"
+              error={whatsappError}
+              styles={{
+                root: { position: 'relative' },
+                label: { 
+                  fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  color: '#8B4513', 
+                  fontWeight: 700, 
+                  fontSize: '16px', 
+                  marginBottom: '8px',
+                  textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+                },
+                input: {
+                  fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  backgroundColor: whatsappError ? 'rgba(255,235,235,0.9)' : 'rgba(255,248,220,0.9)',
+                  border: whatsappError ? '3px solid #FF6B6B' : '3px solid #D2691E',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  padding: '12px 15px 12px 45px',
+                  fontWeight: 500,
+                  transition: 'all 0.3s ease',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+                  '&:focus': {
+                    backgroundColor: whatsappError ? 'rgba(255,235,235,0.9)' : '#FFF8DC',
+                    borderColor: whatsappError ? '#FF6B6B' : '#32CD32',
+                    boxShadow: whatsappError 
+                      ? '0 0 0 3px rgba(255, 107, 107, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)'
+                      : '0 0 0 3px rgba(50, 205, 50, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)',
+                    transform: 'translateY(-2px)'
+                  },
+                  '&:hover': {
+                    backgroundColor: whatsappError ? 'rgba(255,235,235,0.9)' : '#FFF8DC',
+                    transform: 'translateY(-1px)',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.1)'
+                  },
+                  '&::placeholder': {
+                    fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                  }
+                },
+                error: {
+                  color: '#FF6B6B',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  marginTop: '5px'
+                }
+              }}
+            />
+            {/* Success Indicator */}
+            {whatsappNumber && !whatsappError && whatsappNumber.length >= 10 && (
+              <Text style={{
+                color: '#32CD32',
+                fontSize: '12px',
+                fontWeight: 600,
+                marginTop: '5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                ✅ Nomor WhatsApp valid
+              </Text>
+            )}
+          </Box>
+        </div>
 
-      {/* Bottom decoration */}
-      <div style={{
-        position: 'absolute', 
-        bottom: '0', 
-        left: '0', 
-        right: '0', 
-        height: '4px',
-        background: 'linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57)',
-        borderRadius: '0 0 24px 24px'
-      }} />
+        {/* Konfirmasi Button / Success Message */}
+        <Center mt={30}>
+          {!isValidated ? (
+            // Tombol Konfirmasi sebelum validasi
+            <Box
+              onClick={handleValidation}
+              style={{
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                e.currentTarget.style.filter = 'brightness(1.1)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.filter = 'brightness(1)';
+              }}
+            >
+              <img
+                src="/src/img/konfirmasi.png"
+                alt="Konfirmasi"
+                style={{
+                  width: '200px',
+                  height: 'auto',
+                  display: 'block',
+                  transition: 'all 0.3s ease'
+                }}
+              />
+            </Box>
+          ) : (
+            // Pesan setelah validasi berhasil
+            <Box style={{
+              background: 'linear-gradient(135deg, #32CD32, #228B22)',
+              borderRadius: '15px',
+              padding: '15px 25px',
+              border: '3px solid #FFD700',
+              boxShadow: '0 8px 25px rgba(50, 205, 50, 0.4)',
+              animation: 'pulse 2s infinite',
+              textAlign: 'center'
+            }}>
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: '16px',
+                fontWeight: 700,
+                textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+                fontFamily: '"Klavika Bold", "Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                letterSpacing: '0.5px'
+              }}>
+                🎮 Silahkan top up sebanyak banyaknya 🎮
+              </Text>
+            </Box>
+          )}
+        </Center>
 
-      {/* Validate Button */}
-      <Center mt={24}>
-        <Button
-          onClick={onValidation}
-          size="xl"
-          radius="xl"
-          variant={isValidated ? "light" : "filled"}
-          color={isValidated ? "green" : "blue"}
-          leftSection={isValidated ? "✓" : "🔒"}
-          styles={{
-            root: {
-              background: isValidated
-                ? 'linear-gradient(45deg, #51cf66, #40c057)'
-                : 'linear-gradient(45deg, #339af0, #228be6)',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '12px 32px',
-              fontSize: '18px',
-              fontWeight: 700,
-              marginTop: '40px',
-              marginLeft: '4px',
-              boxShadow: isValidated
-                ? '0 8px 32px rgba(81, 207, 102, 0.4)'
-                : '0 8px 32px rgba(61, 79, 94, 0.4)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-3px) scale(1.05)',
-                boxShadow: isValidated
-                  ? '0 12px 40px rgba(81, 207, 102, 0.6)'
-                  : '0 12px 40px rgba(51, 154, 240, 0.6)'
-              },
-              '&:active': {
-                transform: 'translateY(-1px) scale(1.02)'
-              }
-            }
-          }}
-        >
-          {isValidated ? 'Data Sudah Tervalidasi ✨' : 'Validasi Data Sekarang'}
-        </Button>
-      </Center>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
-          50% { transform: translate(-50%, -50%) rotate(180deg); }
-        }
-      `}</style>
+        {/* CSS Animation untuk pulse effect */}
+        <style jsx>{`
+          @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 8px 25px rgba(50, 205, 50, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 12px 35px rgba(50, 205, 50, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 8px 25px rgba(50, 205, 50, 0.4); }
+          }
+        `}</style>
+      </Box>
     </Box>
   );
 }

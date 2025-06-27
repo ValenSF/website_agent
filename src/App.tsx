@@ -8,7 +8,6 @@ import ErrorAlert from './components/ErrorAlert';
 import TopUpGrid from './components/TopUpGrid';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import QrisPage from './pages/QrisPage';
-import { SuccessPage } from './pages/SuccessPage';
 
 export default function App() {
   const [neoId, setNeoId] = useState('');
@@ -28,13 +27,21 @@ export default function App() {
     }
   };
 
-  const handleImageClick = (topUpAmount) => {
+  // Updated function untuk handle click dengan topUpValue yang benar
+  const handleImageClick = (topUpAmount: string, topUpValue: string) => {
     if (!isValidated) {
       setShowError(true);
       setTimeout(() => setShowError(false), 3000);
       return;
     }
-    navigate('/qris', { state: { topUpAmount, neoId, whatsappNumber } });
+    navigate('/qris', { 
+      state: { 
+        topUpAmount,     // IDR amount (e.g., "15000")
+        topUpValue,      // Top up value (e.g., "200" for 200M)
+        neoId, 
+        whatsappNumber 
+      } 
+    });
   };
 
   return (
@@ -207,12 +214,12 @@ export default function App() {
         zIndex: 0
       }}>🐟</div>
 
-      {/* Main Content Container dengan Background Image */}
+      {/* Main Content Container - Updated untuk konsisten dengan QrisPage */}
       <Box
         style={{
           margin: '0 auto',
           minHeight: '100vh',
-          maxWidth: 600,
+          maxWidth: 400, // Changed dari 600 ke 400 untuk konsisten dengan QrisPage
           overflowX: 'hidden',
           backgroundImage: 'url(/src/img/background.jpg)',
           backgroundSize: 'cover',
@@ -253,7 +260,7 @@ export default function App() {
 
           <TopUpGrid
             isValidated={isValidated}
-            onImageClick={handleImageClick}
+            onImageClick={handleImageClick} // Updated function signature
           />
         </div>
       </Box>

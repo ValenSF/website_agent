@@ -1,4 +1,4 @@
-import { Box, Text, Button } from '@mantine/core';
+import { Box, Text, Button, Select } from '@mantine/core';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
@@ -6,11 +6,12 @@ export default function QrisPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(300); // 5 minutes countdown
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   
-  const { topUpAmount, neoId, whatsappNumber } = location.state || {};
+  const { topUpAmount, topUpValue, neoId, whatsappNumber } = location.state || {};
 
   useEffect(() => {
-    if (!topUpAmount || !neoId || !whatsappNumber) {
+    if (!topUpAmount || !topUpValue || !neoId || !whatsappNumber) {
       navigate('/');
       return;
     }
@@ -27,7 +28,7 @@ export default function QrisPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [topUpAmount, neoId, whatsappNumber, navigate]);
+  }, [topUpAmount, topUpValue, neoId, whatsappNumber, navigate]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -39,12 +40,115 @@ export default function QrisPage() {
     navigate('/success', { 
       state: { 
         amount: topUpAmount, 
+        topUpValue: topUpValue,
         neoId, 
         whatsappNumber,
         transactionId: `TXN${Date.now()}`
       } 
     });
   };
+
+  // Payment methods dengan instruksi cara bayar
+  const paymentMethods = [
+    {
+      value: 'gopay',
+      label: 'GoPay',
+      instructions: [
+        '1. Buka aplikasi Gojek',
+        '2. Pilih menu GoPay',
+        '3. Tap "Scan QR"',
+        '4. Scan QR code di atas',
+        '5. Masukkan PIN GoPay',
+        '6. Pembayaran selesai'
+      ]
+    },
+    {
+      value: 'ovo',
+      label: 'OVO',
+      instructions: [
+        '1. Buka aplikasi OVO',
+        '2. Tap "Scan" di beranda',
+        '3. Scan QR code QRIS',
+        '4. Konfirmasi nominal',
+        '5. Masukkan PIN OVO',
+        '6. Pembayaran berhasil'
+      ]
+    },
+    {
+      value: 'dana',
+      label: 'DANA',
+      instructions: [
+        '1. Buka aplikasi DANA',
+        '2. Pilih "Scan QR"',
+        '3. Arahkan kamera ke QR code',
+        '4. Periksa detail pembayaran',
+        '5. Masukkan PIN DANA',
+        '6. Transaksi selesai'
+      ]
+    },
+    {
+      value: 'bca',
+      label: 'BCA mobile',
+      instructions: [
+        '1. Buka BCA mobile',
+        '2. Pilih menu "QRIS"',
+        '3. Tap "Bayar dengan QRIS"',
+        '4. Scan QR code',
+        '5. Masukkan PIN m-BCA',
+        '6. Konfirmasi pembayaran'
+      ]
+    },
+    {
+      value: 'mandiri',
+      label: 'Livin by Mandiri',
+      instructions: [
+        '1. Buka aplikasi Livin',
+        '2. Pilih "QRIS"',
+        '3. Tap "Scan & Pay"',
+        '4. Scan QR code QRIS',
+        '5. Konfirmasi detail',
+        '6. Masukkan MPIN'
+      ]
+    },
+    {
+      value: 'bni',
+      label: 'BNI Mobile',
+      instructions: [
+        '1. Buka BNI Mobile Banking',
+        '2. Pilih menu "Transfer"',
+        '3. Pilih "QRIS"',
+        '4. Scan QR code',
+        '5. Konfirmasi transaksi',
+        '6. Masukkan PIN'
+      ]
+    },
+    {
+      value: 'cimb',
+      label: 'CIMB Niaga',
+      instructions: [
+        '1. Buka OCTO Mobile',
+        '2. Pilih "QRIS Payment"',
+        '3. Scan QR code',
+        '4. Verifikasi detail',
+        '5. Masukkan PIN',
+        '6. Pembayaran selesai'
+      ]
+    },
+    {
+      value: 'linkaja',
+      label: 'LinkAja',
+      instructions: [
+        '1. Buka aplikasi LinkAja',
+        '2. Tap "Scan"',
+        '3. Scan QR code QRIS',
+        '4. Konfirmasi pembayaran',
+        '5. Masukkan PIN LinkAja',
+        '6. Transaksi berhasil'
+      ]
+    }
+  ];
+
+  const selectedMethod = paymentMethods.find(method => method.value === selectedPaymentMethod);
 
   return (
     <Box style={{ 
@@ -117,14 +221,14 @@ export default function QrisPage() {
         zIndex: 0
       }} />
 
-      {/* Main Content Container dengan Background Image */}
+      {/* Main Content Container */}
       <Box style={{
         margin: '0 auto',
         minHeight: '100vh',
         maxWidth: 400,
         position: 'relative',
         zIndex: 2,
-        backgroundImage: 'url(/src/img/background.jpg)', // Background image di container
+        backgroundImage: 'url(/src/img/background.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -147,64 +251,33 @@ export default function QrisPage() {
         <div style={{ 
           position: 'relative', 
           zIndex: 2, 
-          padding: '20px 15px',
-          minHeight: '100vh'
+          padding: '20px',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
         }}>
           
-          {/* Header with Fox Character */}
-          <Box style={{ 
-            textAlign: 'center', 
-            marginBottom: '20px',
-            background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(15px)',
-            borderRadius: '20px',
-            padding: '15px',
-            border: '1px solid rgba(255,255,255,0.2)'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(45deg, #FF6B35, #F7931E)',
-              borderRadius: '50%',
-              margin: '0 auto 10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '30px',
-              boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-              border: '2px solid rgba(255,255,255,0.3)'
-            }}>
-              🦊
-            </div>
-            
-            <Text style={{
-              fontSize: '24px',
-              fontWeight: 900,
-              background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontFamily: 'Arial Black, sans-serif',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
-            }}>
-              Cuan
-            </Text>
-          </Box>
-
-          {/* Payment Info Card */}
+          {/* Total Pembayaran Card */}
           <Box style={{
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: '20px',
-            padding: '20px',
+            background: 'rgba(255, 248, 220, 0.95)',
+            borderRadius: '15px',
+            padding: '18px 25px',
             marginBottom: '20px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-            border: '2px solid rgba(255,215,0,0.5)'
+            boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+            border: '1px solid rgba(210, 180, 140, 0.6)',
+            width: '100%',
+            maxWidth: '340px',
+            position: 'relative',
+            marginTop: '20px'
           }}>
             <Text style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#333',
-              textAlign: 'center',
-              marginBottom: '15px'
+              fontSize: '14px',
+              fontWeight: 600,
+              color: '#8B4513',
+              textAlign: 'left',
+              marginBottom: '5px',
+              fontFamily: '"Segoe UI", Arial, sans-serif'
             }}>
               Total Pembayaran
             </Text>
@@ -212,249 +285,199 @@ export default function QrisPage() {
             <Text style={{
               fontSize: '28px',
               fontWeight: 900,
-              color: '#FF6B35',
-              textAlign: 'center',
-              marginBottom: '20px'
+              color: '#8B4513',
+              textAlign: 'left',
+              fontFamily: '"Segoe UI", Arial Black, sans-serif'
             }}>
               IDR {parseInt(topUpAmount || '0').toLocaleString('id-ID')}
             </Text>
 
+            {/* Top Up Amount dibawah IDR */}
+            <Text style={{
+              fontSize: '12px',
+              fontWeight: 500,
+              color: '#B8860B',
+              textAlign: 'left',
+              marginTop: '2px',
+              fontFamily: '"Segoe UI", Arial, sans-serif'
+            }}>
+              {topUpValue}M
+            </Text>
+
             {/* Countdown Timer */}
-            <Box style={{
-              background: 'linear-gradient(45deg, #FFE4B5, #F0E68C)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              marginBottom: '10px',
-              border: '2px solid #DAA520'
+            <Text style={{ 
+              fontSize: '11px', 
+              color: '#FF69B4', 
+              fontWeight: 600,
+              position: 'absolute',
+              bottom: '12px',
+              right: '20px'
             }}>
-              <Text style={{ 
-                fontSize: '14px', 
-                color: '#8B4513', 
-                fontWeight: 700,
-                textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
-              }}>
-                ⏰ Selesaikan pembayaran dalam: {formatTime(countdown)}
-              </Text>
-            </Box>
+              ⏰ {formatTime(countdown)}
+            </Text>
           </Box>
 
-          {/* QRIS Code Card */}
+          {/* QRIS Card menggunakan papanqris.png */}
           <Box style={{
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: '20px',
-            padding: '25px',
-            textAlign: 'center',
-            marginBottom: '20px',
-            boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
-            border: '2px solid rgba(255,215,0,0.6)'
+            position: 'relative',
+            width: '100%',
+            maxWidth: '340px',
+            marginBottom: '20px'
           }}>
-            <Text style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#333',
-              marginBottom: '20px',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.1)'
-            }}>
-              QRIS
-            </Text>
+            {/* QRIS Frame menggunakan papanqris.png */}
+            <img
+              src="/src/img/papanqris.png"
+              alt="QRIS Frame with Cat"
+              style={{
+                width: '100%',
+                height: 'auto',
+                position: 'relative',
+                zIndex: 2
+              }}
+            />
+          </Box>
 
-            {/* QR Code Container dengan Golden Frame */}
+          {/* Payment Methods Card */}
+          <Box style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '340px',
+            marginBottom: '20px'
+          }}>
+            <img
+              src="/src/img/papanbayar.png"
+              alt="Payment Methods"
+              style={{
+                width: '100%',
+                height: 'auto',
+                borderRadius: '15px',
+                boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
+              }}
+            />
+          </Box>
+
+          {/* Dropdown Cara Bayar per Bank */}
+          <Box style={{ 
+            width: '100%',
+            maxWidth: '340px',
+            marginBottom: '20px'
+          }}>
+            <Select
+              placeholder="Pilih metode pembayaran untuk melihat cara bayar"
+              value={selectedPaymentMethod}
+              onChange={setSelectedPaymentMethod}
+              data={paymentMethods.map(method => ({ value: method.value, label: method.label }))}
+              style={{
+                width: '100%'
+              }}
+              styles={{
+                input: {
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '2px solid #7CB342',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: '#333'
+                },
+                dropdown: {
+                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                  border: '1px solid #7CB342',
+                  borderRadius: '8px'
+                },
+                item: {
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  '&[data-selected]': {
+                    backgroundColor: '#7CB342',
+                    color: 'white'
+                  },
+                  '&:hover': {
+                    backgroundColor: 'rgba(124, 179, 66, 0.1)'
+                  }
+                }
+              }}
+            />
+          </Box>
+
+          {/* Instruksi Cara Bayar */}
+          {selectedMethod && (
             <Box style={{
-              background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+              background: 'rgba(255, 255, 255, 0.95)',
               borderRadius: '15px',
-              padding: '15px',
-              margin: '0 auto 20px',
-              maxWidth: '280px',
-              boxShadow: '0 8px 25px rgba(255,165,0,0.4)',
-              border: '3px solid #B8860B'
+              padding: '20px',
+              marginBottom: '20px',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+              border: '2px solid #7CB342',
+              width: '100%',
+              maxWidth: '340px'
             }}>
-              <Box style={{
-                background: '#fff',
-                borderRadius: '10px',
-                padding: '15px',
-                margin: '0 auto',
-                display: 'inline-block',
-                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                {/* QR Code - Replace dengan QR code asli */}
-                <div style={{
-                  width: '200px',
-                  height: '200px',
-                  background: 'repeating-linear-gradient(45deg, #000 0px, #000 4px, #fff 4px, #fff 8px)',
-                  backgroundSize: '8px 8px',
-                  position: 'relative',
-                  border: '2px solid #333'
-                }}>
-                  {/* QR Corner Markers */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '10px',
-                    left: '10px',
-                    width: '30px',
-                    height: '30px',
-                    border: '3px solid #000',
-                    background: '#fff'
-                  }}>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      background: '#000',
-                      margin: '4px'
-                    }}></div>
-                  </div>
-                  <div style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    width: '30px',
-                    height: '30px',
-                    border: '3px solid #000',
-                    background: '#fff'
-                  }}>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      background: '#000',
-                      margin: '4px'
-                    }}></div>
-                  </div>
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '10px',
-                    left: '10px',
-                    width: '30px',
-                    height: '30px',
-                    border: '3px solid #000',
-                    background: '#fff'
-                  }}>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      background: '#000',
-                      margin: '4px'
-                    }}></div>
-                  </div>
-                </div>
-              </Box>
-              
-              {/* Transaction ID */}
               <Text style={{
-                fontSize: '12px',
-                color: '#8B4513',
-                marginTop: '10px',
+                fontSize: '16px',
                 fontWeight: 700,
-                textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+                color: '#7CB342',
+                textAlign: 'center',
+                marginBottom: '15px',
+                fontFamily: '"Segoe UI", Arial, sans-serif'
               }}>
-                Nomor: {neoId}#{Date.now().toString().slice(-6)}
+                Cara Bayar dengan {selectedMethod.label}
               </Text>
+              
+              <Box style={{ textAlign: 'left' }}>
+                {selectedMethod.instructions.map((instruction, index) => (
+                  <Text
+                    key={index}
+                    style={{
+                      fontSize: '13px',
+                      color: '#333',
+                      marginBottom: '8px',
+                      lineHeight: '1.4',
+                      fontFamily: '"Segoe UI", Arial, sans-serif'
+                    }}
+                  >
+                    {instruction}
+                  </Text>
+                ))}
+              </Box>
+
+              {/* Button Sudah Bayar */}
+              <Button
+                onClick={handleSuccessPayment}
+                style={{
+                  width: '100%',
+                  marginTop: '15px',
+                  background: 'linear-gradient(135deg, #7CB342 0%, #689F38 50%, #558B2F 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 15px rgba(76, 175, 80, 0.4)'
+                }}
+              >
+                Sudah Bayar
+              </Button>
             </Box>
+          )}
 
-            {/* Payment Methods */}
-            <Box style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '8px',
-              marginBottom: '15px'
-            }}>
-              {['DANA', 'OVO', 'GoPay', 'ShopeePay'].map((method) => (
-                <div key={method} style={{
-                  background: 'linear-gradient(45deg, #f8f9fa, #e9ecef)',
-                  padding: '8px 4px',
-                  borderRadius: '8px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: '#495057',
-                  border: '1px solid #dee2e6',
-                  textAlign: 'center',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}>
-                  {method}
-                </div>
-              ))}
-            </Box>
-
-            {/* Bank Logos */}
-            <Box style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '6px'
-            }}>
-              {['BCA', 'Mandiri', 'BNI', 'BRI'].map((bank) => (
-                <div key={bank} style={{
-                  background: 'linear-gradient(45deg, #fff, #f8f9fa)',
-                  padding: '6px 4px',
-                  borderRadius: '6px',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  color: '#333',
-                  border: '1px solid #ddd',
-                  textAlign: 'center',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                }}>
-                  {bank}
-                </div>
-              ))}
-            </Box>
-          </Box>
-
-          {/* Instructions */}
-          <Box style={{
-            background: 'rgba(255,255,255,0.9)',
-            borderRadius: '15px',
-            padding: '15px',
-            marginBottom: '20px',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.3)',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
-          }}>
-            <Text style={{
-              fontSize: '14px',
-              color: '#555',
-              textAlign: 'center',
-              lineHeight: 1.5,
-              fontWeight: 500
-            }}>
-              📱 Silakan scan kode QR di atas menggunakan aplikasi pembayaran favorit Anda 
-              (misalnya GoPay, OVO, DANA, LinkAja, Mobile Banking, dll).
-            </Text>
-          </Box>
-
-          {/* Action Buttons */}
-          <Box style={{ display: 'flex', gap: '12px' }}>
-            <Button
-              onClick={() => navigate('/')}
-              variant="outline"
-              style={{
-                flex: 1,
-                borderRadius: '12px',
-                height: '45px',
-                fontWeight: 600,
-                border: '2px solid rgba(255,255,255,0.8)',
-                background: 'rgba(255,255,255,0.9)',
-                color: '#666',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              Kembali
-            </Button>
-            
-            <Button
-              onClick={handleSuccessPayment}
-              style={{
-                flex: 2,
-                background: 'linear-gradient(45deg, #51cf66, #40c057)',
-                border: 'none',
-                borderRadius: '12px',
-                height: '45px',
-                fontWeight: 700,
-                color: 'white',
-                boxShadow: '0 4px 15px rgba(81, 207, 102, 0.4)'
-              }}
-            >
-              Sudah Bayar ✅
-            </Button>
-          </Box>
+          {/* Back Button */}
+          <Button
+            onClick={() => navigate('/')}
+            style={{
+              borderRadius: '10px',
+              height: '35px',
+              fontWeight: 500,
+              fontSize: '12px',
+              border: '1px solid rgba(255,255,255,0.6)',
+              background: 'rgba(255,255,255,0.8)',
+              color: '#666',
+              backdropFilter: 'blur(10px)',
+              padding: '0 20px'
+            }}
+          >
+            Kembali
+          </Button>
         </div>
       </Box>
 
@@ -482,6 +505,11 @@ export default function QrisPage() {
           0% { transform: translateY(0) scale(1); opacity: 0.5; }
           50% { transform: translateY(-40px) scale(1.3); opacity: 0.8; }
           100% { transform: translateY(-80px) scale(0.6); opacity: 0; }
+        }
+        
+        @keyframes sparkle {
+          0%, 100% { opacity: 0.6; transform: scale(1) rotate(0deg); }
+          50% { opacity: 1; transform: scale(1.3) rotate(180deg); }
         }
       `}</style>
     </Box>

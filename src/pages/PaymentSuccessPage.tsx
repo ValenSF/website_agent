@@ -1,4 +1,4 @@
-// pages/SuccessPage.js (Fixed dengan Background Transparan)
+// pages/SuccessPage.js (Updated dengan Board Layout)
 import { Box, Text, Button } from '@mantine/core';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -6,13 +6,13 @@ import { useEffect } from 'react';
 export default function SuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { amount, neoId, whatsappNumber, transactionId } = location.state || {};
+  const { amount, topUpValue, neoId, whatsappNumber, transactionId } = location.state || {};
 
   useEffect(() => {
-    if (!amount || !neoId) {
+    if (!amount || !topUpValue || !neoId) {
       navigate('/');
     }
-  }, [amount, neoId, navigate]);
+  }, [amount, topUpValue, neoId, navigate]);
 
   return (
     <Box style={{ 
@@ -85,7 +85,7 @@ export default function SuccessPage() {
         zIndex: 0
       }} />
 
-      {/* Main Content Container dengan Background Image Langsung */}
+      {/* Main Content Container dengan Background Image */}
       <Box style={{
         margin: '0 auto',
         minHeight: '100vh',
@@ -95,201 +95,300 @@ export default function SuccessPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px 15px',
-        backgroundImage: 'url(/src/img/background.jpg)', // Background langsung di container
+        padding: '30px 20px',
+        backgroundImage: 'url(/src/img/background.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
 
-        {/* Content langsung tanpa card transparan */}
+        {/* Board Container */}
         <Box style={{
           width: '100%',
-          maxWidth: 350,
-          padding: '30px 20px',
-          textAlign: 'center',
+          maxWidth: '350px',
           position: 'relative',
-          zIndex: 1
+          minHeight: '600px'
         }}>
           
-          {/* Success Header dengan Fox */}
+          {/* Cat Character - Separate and above everything */}
           <Box style={{
-            marginBottom: '20px'
+            position: 'absolute',
+            top: '-20px', // Above the board
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 5 // Highest z-index
           }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(45deg, #FF6B35, #F7931E)',
-              borderRadius: '50%',
-              margin: '0 auto 15px',
+            <Box style={{
+              width: '140px',
+              height: '140px',
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '30px',
-              boxShadow: '0 8px 20px rgba(255,107,53,0.4)',
-              border: '3px solid rgba(255,255,255,0.8)'
+              justifyContent: 'center'
             }}>
-              🦊
-            </div>
-            
-            <Text style={{
-              fontSize: '20px',
-              fontWeight: 900,
-              color: '#FFD700', // Solid gold color untuk kontras
-              fontFamily: 'Arial Black, sans-serif',
-              marginBottom: '10px',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)' // Dark shadow untuk kontras
-            }}>
-              Cuan
-            </Text>
+              {/* Shine background */}
+              <img
+                src="/src/img/shine.png"
+                alt="Shine"
+                style={{
+                  position: 'absolute',
+                  top: '-15px',
+                  left: '-75px',
+                  width: '280px',
+                  height: '170px',
+                  objectFit: 'contain',
+                  zIndex: 0,
+                  pointerEvents: 'none'
+                }}
+              />
+              
+              {/* Cat Image */}
+              <img
+                src="/src/img/cat.png"
+                alt="Cat Character"
+                style={{
+                  width: '250px',
+                  height: '120px',
+                  objectFit: 'contain',
+                  position: 'relative',
+                  zIndex: 1,
+                  filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.3))'
+                }}
+              />
+              
+              {/* Sparkles around cat */}
+              <div style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                fontSize: '18px',
+                animation: 'sparkle 2s infinite',
+                zIndex: 2
+              }}>✨</div>
+              
+              <div style={{
+                position: 'absolute',
+                top: '30px',
+                left: '20px',
+                fontSize: '16px',
+                animation: 'sparkle 2s infinite 0.5s',
+                zIndex: 2
+              }}>✨</div>
+              
+              <div style={{
+                position: 'absolute',
+                bottom: '25px',
+                right: '20px',
+                fontSize: '14px',
+                animation: 'sparkle 2s infinite 1s',
+                zIndex: 2
+              }}>✨</div>
+            </Box>
           </Box>
-
-          {/* Success Animation */}
-          <div style={{
-            width: '80px',
-            height: '80px',
-            background: 'linear-gradient(45deg, #51cf66, #40c057)',
-            borderRadius: '50%',
-            margin: '0 auto 20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '40px',
-            animation: 'bounce 1s ease-in-out infinite alternate',
-            boxShadow: '0 8px 25px rgba(81, 207, 102, 0.5)',
-            border: '4px solid rgba(255,255,255,0.9)'
-          }}>
-            ✅
-          </div>
-
-          {/* Success Header */}
-          <Text style={{
-            fontSize: '24px',
-            fontWeight: 900,
-            color: '#fff',
-            marginBottom: '10px',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
-          }}>
-            Pembayaran Sukses
-          </Text>
-
-          <Text style={{
-            fontSize: '32px',
-            fontWeight: 900,
-            color: '#51cf66',
-            marginBottom: '20px',
-            textShadow: '3px 3px 6px rgba(0,0,0,0.8)'
-          }}>
-            IDR {parseInt(amount || '0').toLocaleString('id-ID')}
-          </Text>
-
-          {/* Transaction Details */}
-          <Box style={{
-            background: 'rgba(255,255,255,0.25)', // Transparan tapi readable
-            borderRadius: '15px',
-            padding: '15px',
-            marginBottom: '25px',
-            textAlign: 'left',
-            border: '2px solid rgba(255,255,255,0.4)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            backdropFilter: 'blur(15px)'
-          }}>
-            <div style={{ marginBottom: '8px' }}>
-              <Text style={{ fontSize: '12px', color: '#fff', fontWeight: 600, textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Neo ID:</Text>
-              <Text style={{ fontSize: '14px', fontWeight: 700, color: '#fff', textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{neoId}</Text>
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <Text style={{ fontSize: '12px', color: '#fff', fontWeight: 600, textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>WhatsApp:</Text>
-              <Text style={{ fontSize: '14px', fontWeight: 700, color: '#fff', textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{whatsappNumber}</Text>
-            </div>
-            <div>
-              <Text style={{ fontSize: '12px', color: '#fff', fontWeight: 600, textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Transaction ID:</Text>
-              <Text style={{ fontSize: '14px', fontWeight: 700, color: '#fff', textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{transactionId}</Text>
-            </div>
-          </Box>
-
-          {/* Decorative Elements */}
-          <Box style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '15px',
-            marginBottom: '25px'
-          }}>
-            <span style={{ 
-              fontSize: '24px', 
-              animation: 'sparkle 2s infinite',
-              background: 'rgba(255,215,0,0.3)',
-              borderRadius: '50%',
-              padding: '8px',
-              boxShadow: '0 4px 12px rgba(255,215,0,0.4)',
-              border: '2px solid rgba(255,215,0,0.5)'
-            }}>🎉</span>
-            <span style={{ 
-              fontSize: '24px', 
-              animation: 'sparkle 2s infinite 0.5s',
-              background: 'rgba(255,165,0,0.3)',
-              borderRadius: '50%',
-              padding: '8px',
-              boxShadow: '0 4px 12px rgba(255,165,0,0.4)',
-              border: '2px solid rgba(255,165,0,0.5)'
-            }}>💰</span>
-            <span style={{ 
-              fontSize: '24px', 
-              animation: 'sparkle 2s infinite 1s',
-              background: 'rgba(76,205,196,0.3)',
-              borderRadius: '50%',
-              padding: '8px',
-              boxShadow: '0 4px 12px rgba(76,205,196,0.4)',
-              border: '2px solid rgba(76,205,196,0.5)'
-            }}>🎮</span>
-          </Box>
-
-          {/* Success Message */}
-          <Box style={{
-            background: 'rgba(212,237,218,0.3)', // Lebih transparan
-            borderRadius: '12px',
-            padding: '12px',
-            marginBottom: '20px',
-            border: '2px solid rgba(255,255,255,0.4)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <Text style={{
-              fontSize: '14px',
-              color: '#fff',
-              fontWeight: 600,
-              lineHeight: 1.4,
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
-            }}>
-              🎮 Top up berhasil! Selamat bermain dan raih kemenangan! 🏆
-            </Text>
-          </Box>
-
-          {/* Back to Home Button */}
-          <Button
-            onClick={() => navigate('/')}
+          
+          {/* Board Background - Moved down */}
+          <img
+            src="/src/img/papan.png"
+            alt="Board Background"
             style={{
+              position: 'absolute',
+              top: '150px', // Moved down from 0
+              left: 0,
               width: '100%',
-              background: 'linear-gradient(45deg, #339af0, #228be6)',
-              border: 'none',
-              borderRadius: '15px',
-              height: '50px',
-              fontSize: '16px',
-              fontWeight: 700,
-              color: 'white',
-              boxShadow: '0 6px 20px rgba(51, 154, 240, 0.4)',
-              transition: 'all 0.3s ease'
+              height: 'calc(100% - 120px)', // Adjust height
+              objectFit: 'cover',
+              zIndex: 1
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(51, 154, 240, 0.6)';
+          />
+          
+          {/* Board Top (Header) - Moved down */}
+          <img
+            src="/src/img/papanatas.png"
+            alt="Board Top"
+            style={{
+              position: 'absolute',
+              top: '100px', // Moved down from 0
+              left: 0,
+              width: '100%',
+              height: 'auto',
+              objectFit: 'contain',
+              zIndex: 2
             }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(51, 154, 240, 0.4)';
-            }}
-          >
-            🏠 Kembali ke Pilihan Top Up
-          </Button>
+          />
+
+          {/* Content Container */}
+          <Box style={{
+            position: 'relative',
+            zIndex: 3,
+            padding: '140px 40px 40px', // Increased top padding for cat space
+            textAlign: 'center',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            
+            {/* Success Content */}
+            <Box style={{ marginTop: '0px' }}> {/* Reset margin since cat is separate */}
+              
+              {/* Success Animation - Ganti dengan cekhijau.png */}
+              <Box style={{
+                width: '80px',
+                height: '80px',
+                margin: '0 auto 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'bounce 1s ease-in-out infinite alternate'
+              }}>
+                <img
+                  src="/src/img/cekhijau.png"
+                  alt="Success Check"
+                  style={{
+                    width: '140px',
+                    height: '140px',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 8px 25px rgba(81, 207, 102, 0.5))'
+                  }}
+                />
+              </Box>
+
+              {/* Success Text */}
+              <Text style={{
+                fontSize: '24px',
+                fontWeight: 900,
+                color: '#8B4513',
+                marginBottom: '5px',
+                fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
+                textShadow: '1px 1px 3px rgba(255,255,255,0.8)'
+              }}>
+                Pembayaran Sukses
+              </Text>
+
+              <Text style={{
+                fontSize: '32px',
+                fontWeight: 900,
+                color: '#8B4513',
+                marginBottom: '20px',
+                fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
+                textShadow: '1px 1px 3px rgba(255,255,255,0.8)'
+              }}>
+                IDR {parseInt(amount || '0').toLocaleString('id-ID')}
+              </Text>
+
+              {/* Transaction Details */}
+              <Box style={{
+                padding: '20px',
+                marginBottom: '25px',
+                textAlign: 'left',
+                background: 'rgba(139, 69, 19, 0.1)',
+                borderRadius: '15px',
+                border: '2px solid rgba(139, 69, 19, 0.3)'
+              }}>
+                <div style={{ marginBottom: '10px' }}>
+                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>Neo ID:</Text>
+                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>{neoId}</Text>
+                </div>
+                <div style={{ marginBottom: '10px' }}>
+                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>WhatsApp:</Text>
+                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>{whatsappNumber}</Text>
+                </div>
+                <div>
+                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>Transaction ID:</Text>
+                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>{transactionId}</Text>
+                </div>
+              </Box>
+
+              {/* Celebration Icons */}
+              <Box style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '20px',
+                marginBottom: '25px'
+              }}>
+                <span style={{ 
+                  fontSize: '28px', 
+                  animation: 'bounce 2s infinite',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                }}>🎉</span>
+                <span style={{ 
+                  fontSize: '28px', 
+                  animation: 'bounce 2s infinite 0.3s',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                }}>💰</span>
+                <span style={{ 
+                  fontSize: '28px', 
+                  animation: 'bounce 2s infinite 0.6s',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                }}>🎮</span>
+              </Box>
+
+              {/* Success Message */}
+              <Text style={{
+                fontSize: '16px',
+                color: '#8B4513',
+                fontWeight: 700,
+                lineHeight: 1.4,
+                marginBottom: '5px',
+                textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+              }}>
+                Kamu mendapatkan {topUpValue}M
+              </Text>
+              
+              <Text style={{
+                fontSize: '16px',
+                color: '#8B4513',
+                fontWeight: 700,
+                lineHeight: 1.4,
+                marginBottom: '30px',
+                textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+              }}>
+                Segera cek Aplikasi Neo Party mu
+              </Text>
+
+              {/* Back to Home Button - Ganti dengan kembali.png */}
+              <Box style={{ 
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
+                <button
+                  onClick={() => navigate('/')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    transition: 'transform 0.3s ease',
+                    outline: 'none'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  }}
+                  onMouseDown={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-1px) scale(0.98)';
+                  }}
+                  onMouseUp={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                  }}
+                >
+                  <img
+                    src="/src/img/kembali.png"
+                    alt="Kembali"
+                    style={{
+                      width: '120px',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      filter: 'drop-shadow(0 6px 20px rgba(139, 69, 19, 0.4))'
+                    }}
+                  />
+                </button>
+              </Box>
+            </Box>
+          </Box>
         </Box>
       </Box>
 
@@ -297,12 +396,12 @@ export default function SuccessPage() {
       <style jsx>{`
         @keyframes bounce {
           0% { transform: translateY(0) scale(1); }
-          100% { transform: translateY(-10px) scale(1.05); }
+          100% { transform: translateY(-8px) scale(1.05); }
         }
         
         @keyframes sparkle {
-          0%, 100% { opacity: 0.8; transform: scale(1) rotate(0deg); }
-          50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+          0%, 100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
+          50% { opacity: 1; transform: scale(1.3) rotate(180deg); }
         }
         
         @keyframes floatCloud1 {

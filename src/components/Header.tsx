@@ -1,166 +1,149 @@
-// components/Header.tsx
 import { Box, Text } from '@mantine/core';
 
 export default function Header() {
   return (
     <Box style={{ 
       textAlign: 'center', 
-      padding: '20px 15px',
-      background: 'rgba(255,255,255,0.1)',
+      padding: '15px 10px',
+      background: 'transparent',
       backdropFilter: 'blur(10px)',
       borderRadius: '0 0 20px 20px',
-      margin: '0 0 20px 0'
+      margin: '0 auto 20px auto',
+      maxWidth: 400, // Sama dengan QrisPage
+      width: '100%'
     }}>
       
-      {/* Fox Character */}
+      {/* Cat Character - Adjusted size */}
       <Box style={{
-        width: '100px',
-        height: '100px',
-        background: 'linear-gradient(45deg, #FF6B35, #F7931E)',
-        borderRadius: '50%',
-        margin: '0 auto 15px',
+        width: '100%',
+        maxWidth: '400px', // Consistent dengan QrisPage
+        height: '300px', // Reduced dari 350px
+        background: 'transparent',
+        margin: '0 auto 0px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '50px',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-        border: '3px solid rgba(255,255,255,0.3)',
-        position: 'relative'
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        {/* Ganti dengan gambar karakter asli jika ada */}
-        🦊
-        
+        {/* Shine background - Adjusted */}
+        <img
+          src="/src/img/shine.png"
+          alt="Shine"
+          style={{
+            position: 'absolute',
+            top: '-10px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '380px', // Reduced dari 450px
+            height: '320px', // Reduced dari 400px
+            objectFit: 'contain',
+            zIndex: 0,
+            pointerEvents: 'none'
+          }}
+        />
+        <img
+          src="/src/img/cat.png"
+          alt="Cat Character"
+          style={{
+            width: '240px', // Reduced dari 280px
+            height: '240px', // Reduced dari 280px
+            objectFit: 'contain',
+            borderRadius: '50%',
+            display: 'block',
+            position: 'relative',
+            zIndex: 1
+          }}
+        />
         {/* Efek sparkle */}
         <div style={{
           position: 'absolute',
-          top: '-5px',
-          right: '10px',
-          fontSize: '20px',
-          animation: 'sparkle 2s infinite'
+          top: '50px',
+          right: '25%',
+          fontSize: '20px', // Reduced dari 24px
+          animation: 'sparkle 2s infinite',
+          zIndex: 2
+        }}>
+          ✨
+        </div>
+        
+        <div style={{
+          position: 'absolute',
+          top: '70px',
+          left: '20%',
+          fontSize: '18px', // Reduced dari 20px
+          animation: 'sparkle 2s infinite 0.5s',
+          zIndex: 2
+        }}>
+          ✨
+        </div>
+        
+        <div style={{
+          position: 'absolute',
+          bottom: '70px',
+          right: '30%',
+          fontSize: '14px', // Reduced dari 16px
+          animation: 'sparkle 2s infinite 1s',
+          zIndex: 2
         }}>
           ✨
         </div>
       </Box>
       
-      {/* Logo "Cuan" */}
-      <Text style={{
-        fontSize: '36px',
-        fontWeight: 900,
-        background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        textShadow: '3px 3px 6px rgba(0,0,0,0.3)',
-        fontFamily: 'Arial Black, sans-serif',
-        letterSpacing: '2px',
-        marginBottom: '10px'
-      }}>
-        Cuan
-      </Text>
-      
-      {/* Tagline */}
-      <Text style={{
-        color: '#ffffff',
-        fontSize: '14px',
-        fontWeight: 600,
-        textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-        letterSpacing: '0.5px',
-        lineHeight: 1.3,
-        maxWidth: '280px',
-        margin: '0 auto'
-      }}>
-        BELI DI SINI PASTI UNTUNG BERKALI-KALI LIPAT 🔥
-      </Text>
+      {/* Tagline dengan Klavika Font */}
+      <Box style={{ marginTop: '-20px' }}>
+        <Text style={{
+          fontFamily: '"Klavika Bold", "Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          color: '#ffffff',
+          fontSize: '22px', // Slightly reduced
+          fontWeight: 700,
+          textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+          letterSpacing: '1px',
+          lineHeight: 1.2,
+          maxWidth: '380px', // Consistent dengan container
+          margin: '0 auto',
+          textAlign: 'center'
+        }}>
+          BELI DI SINI PASTI UNTUNG BERKALI-KALI LIPAT 🔥
+        </Text>
+      </Box>
 
-      {/* Decorative elements */}
+      {/* Decorative elements dengan Klavika */}
       <Box style={{
         display: 'flex',
         justifyContent: 'center',
-        gap: '10px',
-        marginTop: '10px'
+        gap: '15px',
+        marginTop: '15px'
       }}>
-        <span style={{ fontSize: '16px', animation: 'bounce 2s infinite' }}>💰</span>
-        <span style={{ fontSize: '16px', animation: 'bounce 2s infinite 0.2s' }}>💎</span>
-        <span style={{ fontSize: '16px', animation: 'bounce 2s infinite 0.4s' }}>🎮</span>
+        <span style={{ 
+          fontSize: '20px',
+          animation: 'bounce 2s infinite',
+          filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
+        }}>💰</span>
+        <span style={{ 
+          fontSize: '20px',
+          animation: 'bounce 2s infinite 0.2s',
+          filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
+        }}>💎</span>
+        <span style={{ 
+          fontSize: '20px',
+          animation: 'bounce 2s infinite 0.4s',
+          filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
+        }}>🎮</span>
       </Box>
 
       <style jsx>{`
         @keyframes sparkle {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.2); }
+          0%, 100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
+          50% { opacity: 1; transform: scale(1.3) rotate(180deg); }
         }
         
         @keyframes bounce {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
+          50% { transform: translateY(-8px); }
         }
       `}</style>
-    </Box>
-  );
-}
-
-// Alternative Version - Jika ingin tetap menggunakan gambar judul.jpg
-export function HeaderWithImage() {
-  return (
-    <Box style={{ 
-      position: 'relative',
-      padding: '15px',
-      background: 'rgba(255,255,255,0.1)',
-      backdropFilter: 'blur(10px)',
-      borderRadius: '0 0 20px 20px',
-      margin: '0 0 20px 0'
-    }}>
-      
-      {/* Background image container */}
-      <Box style={{
-        position: 'relative',
-        borderRadius: '15px',
-        overflow: 'hidden',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.2)'
-      }}>
-        <img
-          src="/src/img/judul.jpg"
-          alt="Judul"
-          style={{ 
-            width: '100%', 
-            height: 'auto',
-            display: 'block',
-            filter: 'brightness(1.1) contrast(1.1)'
-          }}
-        />
-        
-        {/* Overlay gradient */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(45deg, rgba(255,107,53,0.3), rgba(247,147,30,0.3))',
-          pointerEvents: 'none'
-        }} />
-      </Box>
-      
-      {/* Floating tagline */}
-      <Text style={{
-        position: 'absolute',
-        bottom: '15px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        color: '#ffffff',
-        background: 'rgba(0,0,0,0.7)',
-        padding: '8px 16px',
-        borderRadius: '20px',
-        fontSize: '14px',
-        fontWeight: 600,
-        textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        textAlign: 'center',
-        maxWidth: '90%',
-        lineHeight: 1.2
-      }}>
-        BELI DI SINI PASTI UNTUNG BERKALI-KALI LIPAT 🔥
-      </Text>
     </Box>
   );
 }
