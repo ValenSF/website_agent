@@ -233,19 +233,8 @@ export default function QrisPage() {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         overflow: 'hidden'
+        // Removed: backgroundImage, backgroundSize, backgroundPosition, backgroundRepeat
       }}>
-
-        {/* Content Overlay untuk readability */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(255, 255, 255, 0.05)',
-          zIndex: 1,
-          pointerEvents: 'none'
-        }} />
 
         {/* Content Wrapper */}
         <div style={{
@@ -349,14 +338,13 @@ export default function QrisPage() {
               alt="Payment Methods"
               style={{
                 width: '100%',
-                height: 'auto',
-                borderRadius: '15px',
-                boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
+                height: 'auto'
+                // Removed: borderRadius, boxShadow
               }}
             />
           </Box>
 
-          {/* Dropdown Cara Bayar per Bank */}
+          {/* Dropdown Cara Bayar per Bank - Fixed for mobile */}
           <Box style={{
             width: '100%',
             maxWidth: '340px',
@@ -372,31 +360,40 @@ export default function QrisPage() {
               }}
               styles={{
                 input: {
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  border: '2px solid #7CB342',
+                  backgroundColor: '#FFFFFF', // Changed to solid white
+                  border: '3px solid #7CB342', // Thicker border
                   borderRadius: '12px',
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: '#333'
+                  padding: '15px 20px', // Increased padding for mobile
+                  fontSize: '16px', // Increased font size for mobile
+                  fontWeight: 600,
+                  color: '#333',
+                  minHeight: '50px' // Minimum height for mobile touch
                 },
                 dropdown: {
-                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                  border: '1px solid #7CB342',
-                  borderRadius: '8px'
+                  backgroundColor: '#FFFFFF', // Solid white background
+                  border: '2px solid #7CB342',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.2)', // Stronger shadow for visibility
+                  zIndex: 9999 // High z-index for mobile
                 },
                 option: {
-                  padding: '12px 16px',
-                  fontSize: '14px',
+                  padding: '15px 20px', // Increased padding for mobile touch
+                  fontSize: '16px', // Increased font size
+                  fontWeight: 500,
+                  minHeight: '50px', // Minimum height for touch targets
+                  display: 'flex',
+                  alignItems: 'center',
                   '&[data-selected]': {
-                    backgroundColor: '#7CB342',
-                    color: 'white'
+                    backgroundColor: '#7CB342 !important',
+                    color: 'white !important'
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(124, 179, 66, 0.1)'
+                    backgroundColor: 'rgba(124, 179, 66, 0.15) !important'
                   }
                 }
               }}
+              dropdownOpened={undefined} // Let Mantine handle dropdown state
+              withinPortal={true} // Render dropdown in portal for better mobile compatibility
             />
           </Box>
 
