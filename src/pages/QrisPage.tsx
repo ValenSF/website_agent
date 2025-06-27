@@ -344,7 +344,7 @@ export default function QrisPage() {
             />
           </Box>
 
-          {/* Dropdown Cara Bayar per Bank - Fixed for mobile */}
+           {/* Dropdown Cara Bayar per Bank - Fixed for mobile */}
           <Box style={{
             width: '100%',
             maxWidth: '340px',
@@ -360,7 +360,7 @@ export default function QrisPage() {
               }}
               styles={{
                 input: {
-                  backgroundColor: '#FFFFFF', // Changed to solid white
+                  backgroundColor: '#FFFFFF', // Solid white
                   border: '3px solid #7CB342', // Thicker border
                   borderRadius: '12px',
                   padding: '15px 20px', // Increased padding for mobile
@@ -392,8 +392,6 @@ export default function QrisPage() {
                   }
                 }
               }}
-              dropdownOpened={undefined} // Let Mantine handle dropdown state
-              withinPortal={true} // Render dropdown in portal for better mobile compatibility
             />
           </Box>
 
