@@ -133,7 +133,7 @@ export default function Header() {
         }}>🎮</span>
       </Box>
 
-      <style jsx>{`
+      <style>{`
         @keyframes sparkle {
           0%, 100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
           50% { opacity: 1; transform: scale(1.3) rotate(180deg); }

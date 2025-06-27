@@ -363,7 +363,7 @@ export default function InputSection({
         </Center>
 
         {/* CSS Animation untuk pulse effect */}
-        <style jsx>{`
+        <style>{`
           @keyframes pulse {
             0% { transform: scale(1); box-shadow: 0 8px 25px rgba(50, 205, 50, 0.4); }
             50% { transform: scale(1.02); box-shadow: 0 12px 35px rgba(50, 205, 50, 0.6); }

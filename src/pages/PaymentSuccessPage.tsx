@@ -393,7 +393,7 @@ export default function SuccessPage() {
       </Box>
 
       {/* CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes bounce {
           0% { transform: translateY(0) scale(1); }
           100% { transform: translateY(-8px) scale(1.05); }
