@@ -2,19 +2,25 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { MantineProvider } from '@mantine/core';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import App from './App.jsx';
-import QrisPage from './pages/QrisPage.js';
-import SuccessPage from './pages/PaymentSuccessPage.js'; // Tambah import SuccessPage
+import App from './App.tsx'; // Changed from .jsx to .tsx
+import QrisPage from './pages/QrisPage.tsx'; // Changed from .js to .tsx
+import SuccessPage from './pages/PaymentSuccessPage.tsx'; // Changed from .js to .tsx
 import '@mantine/core/styles.css';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+// Fix untuk null check
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Failed to find the root element');
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <MantineProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/qris" element={<QrisPage />} />
-          <Route path="/success" element={<SuccessPage />} /> {/* Tambah route success */}
+          <Route path="/success" element={<SuccessPage />} />
         </Routes>
       </BrowserRouter>
     </MantineProvider>
