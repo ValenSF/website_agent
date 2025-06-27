@@ -7,7 +7,7 @@ export default function QrisPage() {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(300); // 5 minutes countdown
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
-  
+
   const { topUpAmount, topUpValue, neoId, whatsappNumber } = location.state || {};
 
   useEffect(() => {
@@ -30,21 +30,21 @@ export default function QrisPage() {
     return () => clearInterval(timer);
   }, [topUpAmount, topUpValue, neoId, whatsappNumber, navigate]);
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleSuccessPayment = () => {
-    navigate('/success', { 
-      state: { 
-        amount: topUpAmount, 
+    navigate('/success', {
+      state: {
+        amount: topUpAmount,
         topUpValue: topUpValue,
-        neoId, 
+        neoId,
         whatsappNumber,
         transactionId: `TXN${Date.now()}`
-      } 
+      }
     });
   };
 
@@ -151,14 +151,14 @@ export default function QrisPage() {
   const selectedMethod = paymentMethods.find(method => method.value === selectedPaymentMethod);
 
   return (
-    <Box style={{ 
+    <Box style={{
       background: 'linear-gradient(180deg, #87CEEB 0%, #4682B4 30%, #20B2AA 70%, #008B8B 100%)',
-      minHeight: '100vh', 
+      minHeight: '100vh',
       padding: 0,
       position: 'relative',
       overflow: 'hidden'
     }}>
-      
+
       {/* Ocean Animations */}
       <div style={{
         position: 'absolute',
@@ -196,7 +196,7 @@ export default function QrisPage() {
         animation: 'bubble1 8s infinite ease-in-out',
         zIndex: 0
       }} />
-      
+
       <div style={{
         position: 'absolute',
         top: '60%',
@@ -234,7 +234,7 @@ export default function QrisPage() {
         backgroundRepeat: 'no-repeat',
         overflow: 'hidden'
       }}>
-        
+
         {/* Content Overlay untuk readability */}
         <div style={{
           position: 'absolute',
@@ -248,16 +248,16 @@ export default function QrisPage() {
         }} />
 
         {/* Content Wrapper */}
-        <div style={{ 
-          position: 'relative', 
-          zIndex: 2, 
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
           padding: '20px',
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center'
         }}>
-          
+
           {/* Total Pembayaran Card */}
           <Box style={{
             background: 'rgba(255, 248, 220, 0.95)',
@@ -281,7 +281,7 @@ export default function QrisPage() {
             }}>
               Total Pembayaran
             </Text>
-            
+
             <Text style={{
               fontSize: '28px',
               fontWeight: 900,
@@ -305,9 +305,9 @@ export default function QrisPage() {
             </Text>
 
             {/* Countdown Timer */}
-            <Text style={{ 
-              fontSize: '11px', 
-              color: '#FF69B4', 
+            <Text style={{
+              fontSize: '11px',
+              color: '#FF69B4',
               fontWeight: 600,
               position: 'absolute',
               bottom: '12px',
@@ -357,7 +357,7 @@ export default function QrisPage() {
           </Box>
 
           {/* Dropdown Cara Bayar per Bank */}
-          <Box style={{ 
+          <Box style={{
             width: '100%',
             maxWidth: '340px',
             marginBottom: '20px'
@@ -365,7 +365,7 @@ export default function QrisPage() {
             <Select
               placeholder="Pilih metode pembayaran untuk melihat cara bayar"
               value={selectedPaymentMethod}
-              onChange={setSelectedPaymentMethod}
+              onChange={(value: string | null) => setSelectedPaymentMethod(value || '')}
               data={paymentMethods.map(method => ({ value: method.value, label: method.label }))}
               style={{
                 width: '100%'
@@ -385,7 +385,7 @@ export default function QrisPage() {
                   border: '1px solid #7CB342',
                   borderRadius: '8px'
                 },
-                item: {
+                option: {
                   padding: '12px 16px',
                   fontSize: '14px',
                   '&[data-selected]': {
@@ -422,7 +422,7 @@ export default function QrisPage() {
               }}>
                 Cara Bayar dengan {selectedMethod.label}
               </Text>
-              
+
               <Box style={{ textAlign: 'left' }}>
                 {selectedMethod.instructions.map((instruction, index) => (
                   <Text

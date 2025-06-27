@@ -266,6 +266,7 @@ export default function App() {
       </Box>
 
       {/* CSS Animations */}
+      
       <style jsx>{`
         @keyframes floatCloud1 {
           0% { transform: translateX(-120px); opacity: 0.3; }

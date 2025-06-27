@@ -3,7 +3,7 @@ import TopUpItem from './TopUpItem';
 
 interface TopUpGridProps {
   isValidated: boolean;
-  onImageClick: (amount: string, topUpAmount: string) => void; // Add topUpAmount parameter
+  onImageClick: (amount: string, topUpValue: string) => void;
 }
 
 const topUpData = [
