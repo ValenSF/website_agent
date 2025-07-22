@@ -1,11 +1,28 @@
 import { Box, Alert } from '@mantine/core';
 
 interface ErrorAlertProps {
+  errorMessage?: string;
   showError: boolean;
 }
 
-export default function ErrorAlert({ showError }: ErrorAlertProps) {
-  if (!showError) return null;
+export default function ErrorAlert({ errorMessage }: ErrorAlertProps) {
+  // Custom message for unique constraint violation
+  const getCustomErrorMessage = () => {
+    if (
+      errorMessage &&
+      errorMessage.includes('duplicate key value violates unique constraint "users_username_unique"')
+    ) {
+      const usernameMatch = errorMessage.match(/Key \(username\)=\((.*?)\)/);
+      const username = usernameMatch ? usernameMatch[1] : 'nomor WhatsApp';
+      return `Nomor WhatsApp ${username} sudah terdaftar menjadi username! Silakan ganti username dengan menghubungi costumer service`;
+    }
+    // Jangan tampilkan pesan default jika errorMessage tidak ada
+    return errorMessage || '';
+  };
+
+  const customMessage = getCustomErrorMessage();
+
+  if (!customMessage) return null;
 
   return (
     <Box style={{ margin: '0 24px' }}>
@@ -19,15 +36,18 @@ export default function ErrorAlert({ showError }: ErrorAlertProps) {
             border: 'none',
             color: 'white',
             boxShadow: '0 8px 32px rgba(255, 107, 107, 0.4)',
-            animation: 'shake 0.5s ease-in-out'
+            animation: 'shake 0.60s ease-in-out'
           },
           title: {
             color: 'white',
             fontWeight: 700
+          },
+          body: {
+            color: 'white'
           }
         }}
       >
-        Harap isi Neo ID dan Nomor WhatsApp terlebih dahulu sebelum memilih paket top up!
+        {customMessage}
       </Alert>
 
       <style>{`

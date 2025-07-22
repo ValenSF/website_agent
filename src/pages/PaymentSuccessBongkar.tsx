@@ -2,17 +2,61 @@ import { Box, Text, Button, Modal } from '@mantine/core';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
-export default function SuccessPage() {
+interface LocationState {
+  type?: 'bongkar';
+  amount?: string;
+  chipAmount?: string;
+  bankData?: {
+    bankName: string;
+    accountNumber: string;
+    accountHolderName: string;
+  };
+  neoId?: string;
+  whatsappNumber?: string;
+}
+
+export default function BongkarSuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { amount, topUpValue, neoId, whatsappNumber, transactionId } = location.state || {};
+  const locationState = location.state as LocationState;
+  
+  // Extract data from state
+  const amount = locationState?.amount || '0';
+  const chipAmount = locationState?.chipAmount || '0';
+  const bankData = locationState?.bankData;
+  const neoId = locationState?.neoId || '';
+  const whatsappNumber = locationState?.whatsappNumber || '';
+  
   const [modalOpened, setModalOpened] = useState(true);
+  const formattedChipAmount = formatChipAmount(chipAmount);
+
+  // Format chip amount with thousands separator and "chip" suffix
+  function formatChipAmount(amount: string) {
+    const num = parseInt(amount || '0', 10);
+    return `${num.toLocaleString('id-ID')} chip`;
+  }
+  // Function to get bank display name
+  const getBankDisplayName = (bankCode: string) => {
+    const bankMap: { [key: string]: string } = {
+      'bca': 'BCA',
+      'mandiri': 'MANDIRI',
+      'bni': 'BNI',
+      'bri': 'BRI',
+      'cimb': 'CIMB NIAGA',
+      'danamon': 'DANAMON',
+      'permata': 'PERMATA',
+      'ocbc': 'OCBC NISP',
+      'maybank': 'MAYBANK',
+      'btn': 'BTN',
+    };
+    return bankMap[bankCode] || bankCode.toUpperCase();
+  };
 
   useEffect(() => {
-    if (!amount || !topUpValue || !neoId) {
+    if (!amount || !chipAmount) {
       navigate('/');
     }
-  }, [amount, topUpValue, neoId, navigate]);
+  }, [amount, chipAmount, navigate]);
 
   return (
     <Box style={{ 
@@ -184,7 +228,7 @@ export default function SuccessPage() {
             fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
             textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
           }}>
-            Jika <strong><em>nomor WhatsApp</em></strong> kamu belum terdaftar,<br />kami akan mengirimkan username dan password baru!
+            Dana akan ditransfer ke rekening Anda dalam <strong><em>1-3 hari kerja</em></strong>.<br />Silakan tunggu konfirmasi lebih lanjut!
           </Text>
           
           <Box style={{
@@ -197,12 +241,12 @@ export default function SuccessPage() {
               fontSize: '28px',
               animation: 'bounce 2s infinite',
               filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-            }}>📱</span>
+            }}>💰</span>
             <span style={{
               fontSize: '28px',
               animation: 'bounce 2s infinite 0.3s',
               filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-            }}>🔒</span>
+            }}>🏦</span>
           </Box>
 
           <Box style={{ 
@@ -415,7 +459,7 @@ export default function SuccessPage() {
                 fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
                 textShadow: '1px 1px 3px rgba(255,255,255,0.8)'
               }}>
-                Pembayaran Sukses
+                Bongkar Sukses
               </Text>
 
               <Text style={{
@@ -438,16 +482,22 @@ export default function SuccessPage() {
                 border: '2px solid rgba(139, 69, 19, 0.3)'
               }}>
                 <div style={{ marginBottom: '10px' }}>
-                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>Neo ID:</Text>
-                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>{neoId}</Text>
+                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>Bank:</Text>
+                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>
+                    {bankData?.bankName ? getBankDisplayName(bankData.bankName) : 'N/A'}
+                  </Text>
                 </div>
                 <div style={{ marginBottom: '10px' }}>
-                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>WhatsApp:</Text>
-                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>{whatsappNumber}</Text>
+                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>No. Rekening:</Text>
+                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>
+                    {bankData?.accountNumber || 'N/A'}
+                  </Text>
                 </div>
                 <div>
-                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>Transaction ID:</Text>
-                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>{transactionId}</Text>
+                  <Text style={{ fontSize: '12px', color: '#8B4513', fontWeight: 600 }}>Nama Pemilik:</Text>
+                  <Text style={{ fontSize: '14px', fontWeight: 700, color: '#8B4513' }}>
+                    {bankData?.accountHolderName || 'N/A'}
+                  </Text>
                 </div>
               </Box>
 
@@ -461,17 +511,17 @@ export default function SuccessPage() {
                   fontSize: '28px', 
                   animation: 'bounce 2s infinite',
                   filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-                }}>🎉</span>
+                }}>💰</span>
                 <span style={{ 
                   fontSize: '28px', 
                   animation: 'bounce 2s infinite 0.3s',
                   filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-                }}>💰</span>
+                }}>🏦</span>
                 <span style={{ 
                   fontSize: '28px', 
                   animation: 'bounce 2s infinite 0.6s',
                   filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-                }}>🎮</span>
+                }}>✅</span>
               </Box>
 
               <Text style={{
@@ -482,7 +532,7 @@ export default function SuccessPage() {
                 marginBottom: '5px',
                 textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
               }}>
-                Kamu mendapatkan {topUpValue}M
+                Kamu berhasil bongkar {formattedChipAmount}
               </Text>
               
               <Text style={{
@@ -493,7 +543,7 @@ export default function SuccessPage() {
                 marginBottom: '30px',
                 textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
               }}>
-                Segera cek Aplikasi Neo Party mu
+                Dana akan segera ditransfer
               </Text>
 
               <Box style={{ 

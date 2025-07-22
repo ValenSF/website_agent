@@ -1,5 +1,8 @@
 import { Box, Text, TextInput, Center } from '@mantine/core';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
+import { apiService, TopupResponse } from '../../services/apiService';
+
 
 interface InputSectionProps {
   neoId: string;
@@ -10,19 +13,22 @@ interface InputSectionProps {
   onValidation: () => void;
 }
 
-// Default Export - ini yang dibutuhkan App.tsx
 export default function InputSection({
   neoId,
   setNeoId,
   whatsappNumber,
   setWhatsapp,
   isValidated,
-  onValidation
+  onValidation,
 }: InputSectionProps) {
   const [neoIdError, setNeoIdError] = useState('');
   const [whatsappError, setWhatsappError] = useState('');
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [backendError, setBackendError] = useState<string | null>(null);
+  const hCaptchaRef = useRef<HCaptcha>(null);
 
-  // Validasi hanya angka (no special characters, no spaces)
+  // Validasi hanya angka
   const validateNumberOnly = (value: string): boolean => {
     const numberOnlyRegex = /^[0-9]*$/;
     return numberOnlyRegex.test(value);
@@ -31,24 +37,19 @@ export default function InputSection({
   // Handler untuk Neo ID
   const handleNeoIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.currentTarget.value;
-    
-    // Cek validasi
     if (value === '') {
       setNeoId(value);
       setNeoIdError('');
       return;
     }
-    
     if (!validateNumberOnly(value)) {
       setNeoIdError('Neo ID hanya boleh berisi angka');
       return;
     }
-    
     if (value.length > 20) {
       setNeoIdError('Neo ID maksimal 20 digit');
       return;
     }
-    
     setNeoId(value);
     setNeoIdError('');
   };
@@ -56,38 +57,62 @@ export default function InputSection({
   // Handler untuk WhatsApp
   const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.currentTarget.value;
-    
-    // Cek validasi
     if (value === '') {
       setWhatsapp(value);
       setWhatsappError('');
       return;
     }
-    
     if (!validateNumberOnly(value)) {
       setWhatsappError('Nomor WhatsApp hanya boleh berisi angka');
       return;
     }
-    
     if (value.length > 15) {
       setWhatsappError('Nomor WhatsApp maksimal 15 digit');
       return;
     }
-    
     if (value.length < 10) {
       setWhatsappError('Nomor WhatsApp minimal 10 digit');
       setWhatsapp(value);
       return;
     }
-    
     setWhatsapp(value);
     setWhatsappError('');
   };
 
-  // Validasi sebelum konfirmasi
+  // Handler untuk hCaptcha
+ const handleCaptchaVerify = async (token: string) => {
+  console.log('✅ hCaptcha token:', token);
+  setCaptchaToken(token);
+  setBackendError(null);
+
+    try {
+      const response: TopupResponse = await apiService.createTopup({
+        neo_id: neoId,
+        whatsapp_number: apiService.formatPhoneNumber(whatsappNumber),
+        'h-captcha-response': token,
+      });
+
+      console.log('📨 [API] Topup response:', response);
+
+      if (response.status === 'success') {
+        onValidation(); // Tampilkan pesan sukses
+        setShowCaptcha(false);
+        if (hCaptchaRef.current) {
+          hCaptchaRef.current.resetCaptcha(); // Reset hCaptcha untuk sesi berikutnya
+        }
+      } else {
+        setBackendError(response.message || 'Gagal memproses top-up. Silakan coba lagi.');
+      }
+    } catch (error: any) {
+      console.error('❌ [API] Topup error:', error);
+      setBackendError(error.message || 'Terjadi kesalahan server. Silakan coba lagi.');
+    }
+  };
+
+  // Validasi sebelum menampilkan hCaptcha
   const handleValidation = () => {
     let hasError = false;
-    
+
     // Validasi Neo ID
     if (!neoId.trim()) {
       setNeoIdError('Neo ID wajib diisi');
@@ -99,7 +124,7 @@ export default function InputSection({
       setNeoIdError('Neo ID minimal 3 digit');
       hasError = true;
     }
-    
+
     // Validasi WhatsApp
     if (!whatsappNumber.trim()) {
       setWhatsappError('Nomor WhatsApp wajib diisi');
@@ -111,10 +136,10 @@ export default function InputSection({
       setWhatsappError('Nomor WhatsApp minimal 10 digit');
       hasError = true;
     }
-    
-    // Jika tidak ada error, lanjutkan validasi
+
+    // Jika tidak ada error, tampilkan hCaptcha
     if (!hasError) {
-      onValidation();
+    setShowCaptcha(true);
     }
   };
 
@@ -125,7 +150,6 @@ export default function InputSection({
       position: 'relative',
       borderRadius: '20px'
     }}>
-      
       {/* Board Background */}
       <Box style={{
         position: 'absolute',
@@ -147,7 +171,6 @@ export default function InputSection({
         zIndex: 1,
         padding: '25px 25px 30px'
       }}>
-        
         <Text style={{
           fontFamily: '"Klavika Bold", "Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           color: '#8B4513',
@@ -175,11 +198,11 @@ export default function InputSection({
               error={neoIdError}
               styles={{
                 root: { position: 'relative' },
-                label: { 
+                label: {
                   fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                  color: '#8B4513', 
-                  fontWeight: 700, 
-                  fontSize: '16px', 
+                  color: '#8B4513',
+                  fontWeight: 700,
+                  fontSize: '16px',
                   marginBottom: '8px',
                   textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
                 },
@@ -196,7 +219,7 @@ export default function InputSection({
                   '&:focus': {
                     backgroundColor: neoIdError ? 'rgba(255,235,235,0.9)' : '#FFF8DC',
                     borderColor: neoIdError ? '#FF6B6B' : '#FF8C00',
-                    boxShadow: neoIdError 
+                    boxShadow: neoIdError
                       ? '0 0 0 3px rgba(255, 107, 107, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)'
                       : '0 0 0 3px rgba(255, 140, 0, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)',
                     transform: 'translateY(-2px)'
@@ -218,7 +241,6 @@ export default function InputSection({
                 }
               }}
             />
-            {/* Success Indicator */}
             {neoId && !neoIdError && neoId.length >= 3 && (
               <Text style={{
                 color: '#32CD32',
@@ -246,11 +268,11 @@ export default function InputSection({
               error={whatsappError}
               styles={{
                 root: { position: 'relative' },
-                label: { 
+                label: {
                   fontFamily: '"Klavika", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                  color: '#8B4513', 
-                  fontWeight: 700, 
-                  fontSize: '16px', 
+                  color: '#8B4513',
+                  fontWeight: 700,
+                  fontSize: '16px',
                   marginBottom: '8px',
                   textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
                 },
@@ -267,7 +289,7 @@ export default function InputSection({
                   '&:focus': {
                     backgroundColor: whatsappError ? 'rgba(255,235,235,0.9)' : '#FFF8DC',
                     borderColor: whatsappError ? '#FF6B6B' : '#32CD32',
-                    boxShadow: whatsappError 
+                    boxShadow: whatsappError
                       ? '0 0 0 3px rgba(255, 107, 107, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)'
                       : '0 0 0 3px rgba(50, 205, 50, 0.3), inset 0 2px 4px rgba(0,0,0,0.1)',
                     transform: 'translateY(-2px)'
@@ -289,7 +311,6 @@ export default function InputSection({
                 }
               }}
             />
-            {/* Success Indicator */}
             {whatsappNumber && !whatsappError && whatsappNumber.length >= 10 && (
               <Text style={{
                 color: '#32CD32',
@@ -304,12 +325,34 @@ export default function InputSection({
               </Text>
             )}
           </Box>
+
+          {/* hCaptcha (hanya muncul setelah validasi input berhasil) */}
+          {showCaptcha && !isValidated && (
+            <Center mt={20}>
+              <Box style={{ border: '3px solid #D2691E', borderRadius: '12px', padding: '10px', backgroundColor: 'rgba(255,248,220,0.9)' }}>
+                <HCaptcha
+                  sitekey="6b4e4854-77de-4780-aa9c-0288a9b65e90" // Ganti dengan Site Key produksi di environment produksi
+                  onVerify={handleCaptchaVerify}
+                  ref={hCaptchaRef} // Tambahkan ref
+                />
+              </Box>
+            </Center>
+          )}
+          {showCaptcha && !captchaToken && (
+            <Text style={{ color: '#FF6B6B', fontSize: '12px', marginTop: '10px', textAlign: 'center' }}>
+              Harap selesaikan hCaptcha untuk melanjutkan
+            </Text>
+          )}
+          {backendError && (
+            <Text style={{ color: '#FF6B6B', fontSize: '12px', marginTop: '10px', textAlign: 'center' }}>
+              {backendError}
+            </Text>
+          )}
         </div>
 
         {/* Konfirmasi Button / Success Message */}
         <Center mt={30}>
           {!isValidated ? (
-            // Tombol Konfirmasi sebelum validasi
             <Box
               onClick={handleValidation}
               style={{
@@ -338,7 +381,6 @@ export default function InputSection({
               />
             </Box>
           ) : (
-            // Pesan setelah validasi berhasil
             <Box style={{
               background: 'linear-gradient(135deg, #32CD32, #228B22)',
               borderRadius: '15px',

@@ -1,47 +1,258 @@
 // App.tsx
-import { Box } from '@mantine/core';
-import { useState } from 'react';
+import { Box, LoadingOverlay } from '@mantine/core';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import InputSection from './components/InputSection';
 import ErrorAlert from './components/ErrorAlert';
-import TopUpGrid from './components/TopUpGrid';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import QrisPage from './pages/QrisPage';
+import SelectionGrid from './components/SelectionGrid'; // ✅ Changed from TopUpGrid to SelectionGrid
+import { apiService, BankAccountData } from './../services/apiService';
 
 export default function App() {
   const [neoId, setNeoId] = useState('');
   const [whatsappNumber, setWhatsapp] = useState('');
+  const [txtErr, setTxtErr] = useState('');
   const [isValidated, setIsValidated] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  
+  // ✅ Loading state untuk validasi Neo ID
+  const [isValidatingNeoId, setIsValidatingNeoId] = useState(false);
+  const [bankAccounts, setBankAccounts] = useState<BankAccountData[]>([]);
+  const [isProcessingBongkar, setIsProcessingBongkar] = useState(false);
+  
   const navigate = useNavigate();
 
+  // Extract referral code from URL on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref') || urlParams.get('referral') || '';
+    setReferralCode(ref);
+    
+    // Enhanced logging for debugging
+    console.log('🔍 [APP] URL Debug:', {
+      fullUrl: window.location.href,
+      urlParams: Object.fromEntries(urlParams.entries()),
+      extractedRef: ref,
+      finalReferralCode: ref || 'default_ref'
+    });
+    
+    // Store in sessionStorage as backup
+    if (ref) {
+      sessionStorage.setItem('referralCode', ref);
+      console.log('✅ [APP] Referral code stored in sessionStorage:', ref);
+    }
+  }, []);
+
   const handleValidation = () => {
+    // Enhanced validation
     if (neoId.trim() === '' || whatsappNumber.trim() === '') {
+      setTxtErr('Mohon lengkapi semua field yang diperlukan');
       setShowError(true);
       setIsValidated(false);
       setTimeout(() => setShowError(false), 3000);
-    } else {
-      setShowError(false);
-      setIsValidated(true);
+      return;
     }
+
+    // Validate Neo ID format (numbers only, min 3 digits)
+    if (!/^[0-9]{3,20}$/.test(neoId)) {
+      setTxtErr('Neo ID harus berupa angka 3-20 digit');
+      setShowError(true);
+      setIsValidated(false);
+      setTimeout(() => setShowError(false), 3000);
+      return;
+    }
+
+    // Validate WhatsApp number format (numbers only, min 10 digits)
+    if (!/^[0-9]{10,15}$/.test(whatsappNumber)) {
+      setTxtErr('Nomor WhatsApp harus berupa angka 10-15 digit');
+      setShowError(true);
+      setIsValidated(false);
+      setTimeout(() => setShowError(false), 3000);
+      return;
+    }
+
+    // ✅ Simple validation success
+    setShowError(false);
+    setIsValidated(true);
+    setTxtErr('');
+    
+    // Save to storage untuk backup
+    localStorage.setItem('neo_player_id', neoId.trim());
+    sessionStorage.setItem('neo_player_id', neoId.trim());
+    
+    console.log('✅ [APP] Basic validation completed');
   };
 
-  // Updated function untuk handle click dengan topUpValue yang benar
-  const handleImageClick = (topUpAmount: string, topUpValue: string) => {
+  // ✅ Handler untuk TopUp (existing functionality)
+  const handleTopUpClick = async (topUpAmount: string, topUpValue: string) => {
     if (!isValidated) {
+      setTxtErr('Mohon lengkapi dan validasi semua field terlebih dahulu');
       setShowError(true);
       setTimeout(() => setShowError(false), 3000);
       return;
     }
-    navigate('/qris', { 
-      state: { 
-        topUpAmount,     // IDR amount (e.g., "15000")
-        topUpValue,      // Top up value (e.g., "200" for 200M)
-        neoId, 
-        whatsappNumber 
-      } 
+
+    // Final validation before navigation
+    if (!neoId.trim() || !whatsappNumber.trim()) {
+      setTxtErr('Mohon lengkapi semua field yang diperlukan');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
+      return;
+    }
+
+    // Get referral code first
+    const finalReferralCode = referralCode || sessionStorage.getItem('referralCode') || 'default_ref';
+
+    // ✅ Validate Neo ID by calling web-deposit endpoint
+    setIsValidatingNeoId(true);
+    setTxtErr('');
+    
+    try {
+      console.log('🔍 [APP] Validating Neo ID before navigation:', neoId.trim());
+      
+      const amountId = apiService.getAmountId(topUpAmount);
+      const formattedPhone = apiService.formatPhoneNumber(whatsappNumber);
+      
+      // Call web-deposit API to validate Neo ID
+      const response = await apiService.createWebDeposit({
+        amount_id: amountId,
+        agent_referral: finalReferralCode,
+        neo_player_id: neoId.trim(),
+        phone_no: formattedPhone,
+      });
+      
+      console.log('📨 [APP] Web-deposit validation response:', response);
+      
+      if (response.status === 'success') {
+        console.log('✅ [APP] Validation successful, proceeding to QRIS');
+        
+        // Navigate to QRIS page with transaction data
+        navigate('/qris', { 
+          state: { 
+            topUpAmount,
+            topUpValue,
+            neoId: neoId.trim(), 
+            whatsappNumber: whatsappNumber.trim(),
+            referralCode: finalReferralCode,
+            // ✅ Pass transaction data yang sudah dibuat
+            transactionData: response.data,
+            transactionId: response.data?.id,
+            qrCodeUrl: response.data?.data?.qr_url
+          } 
+        });
+        
+      } else {
+        // Handle validation errors
+        let errorMessage = 'Neo ID tidak valid';
+        
+        if (response.message === 'LoadPlayerDataFailed') {
+          errorMessage = 'Neo ID tidak ditemukan. Pastikan ID Anda benar.';
+        } else if (response.message) {
+          errorMessage = response.message;
+        }
+        
+        console.log('❌ [APP] Neo ID validation failed:', response.message);
+        setTxtErr(errorMessage);
+        setShowError(true);
+        setTimeout(() => setShowError(false), 4000);
+      }
+      
+    } catch (error) {
+      console.error('🚨 [APP] Neo ID validation error:', error);
+      setTxtErr('Terjadi kesalahan saat validasi Neo ID. Silakan coba lagi.');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 4000);
+    } finally {
+      setIsValidatingNeoId(false);
+    }
+  };
+
+  const handleBongkarClick = async (amount: string, chipAmount: string) => {
+  if (!isValidated) {
+    setTxtErr('Mohon lengkapi dan validasi semua field terlebih dahulu');
+    setShowError(true);
+    setTimeout(() => setShowError(false), 3000);
+    return;
+  }
+
+  // Final validation
+  if (!neoId.trim() || !whatsappNumber.trim()) {
+    setTxtErr('Mohon lengkapi semua field yang diperlukan');
+    setShowError(true);
+    setTimeout(() => setShowError(false), 3000);
+    return;
+  }
+
+  const finalReferralCode = referralCode || sessionStorage.getItem('referralCode') || 'default_ref';
+
+  // ✅ NEW: Validate Neo ID dan load bank accounts setelah klik bongkar
+  setIsProcessingBongkar(true);
+  setTxtErr('');
+  setShowError(false); // ✅ RESET error state at start
+  
+  try {
+    console.log('🔍 [APP] Validating Neo ID and loading bank accounts:', {
+      neoId: neoId.trim(),
+      agentReferral: finalReferralCode
     });
+    
+    // Hit API bank-accounts untuk validasi sekaligus ambil data
+    const response = await apiService.getBankAccounts(neoId.trim(), finalReferralCode);
+    
+    if (response.status === 'success' && response.data) {
+      console.log('✅ [APP] Bank accounts loaded successfully:', response.data.bank_accounts.length);
+      
+      // Save data ke storage
+      localStorage.setItem('neo_player_id', neoId.trim());
+      localStorage.setItem('agent_referral', finalReferralCode);
+      sessionStorage.setItem('neo_player_id', neoId.trim());
+      sessionStorage.setItem('agent_referral', finalReferralCode);
+
+      // ✅ ONLY navigate if successful
+      navigate('/bank-form', {
+        state: {
+          amount,
+          chipAmount,
+          neoId: neoId.trim(),
+          neoPlayerId: neoId.trim(),
+          whatsappNumber: whatsappNumber.trim(),
+          agentReferral: finalReferralCode,
+          bankAccounts: response.data.bank_accounts,
+          userInfo: {
+            user_id: response.data.user_id,
+            user_name: response.data.user_name,
+            neo_player_id: response.data.neo_player_id
+          },
+          agentInfo: response.data.agent_info,
+          preValidated: true
+        }
+      });
+      
+    } else {
+        // Handle validation errors
+        let errorMessage = 'Neo ID tidak valid';
+        
+        if (response.message === 'LoadPlayerDataFailed') {
+          errorMessage = 'Neo ID tidak ditemukan. Pastikan ID Anda benar.';
+        } else if (response.message) {
+          errorMessage = response.message;
+        }
+        
+        console.log('❌ [APP] Neo ID validation failed:', response.message);
+        setTxtErr(errorMessage);
+        setShowError(true);
+        setTimeout(() => setShowError(false), 4000);
+      }
+      
+    } catch (error) {
+      console.error('🚨 [APP] Neo ID validation error:', error);
+      setTxtErr('Terjadi kesalahan saat validasi Neo ID. Silakan coba lagi.');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 4000);
+    } finally {
+      setIsValidatingNeoId(false);
+    }
   };
 
   return (
@@ -52,6 +263,30 @@ export default function App() {
       position: 'relative',
       overflow: 'hidden'
     }}>
+      
+      {/* ✅ Loading overlay untuk Neo ID validation */}
+      <LoadingOverlay visible={isValidatingNeoId} />
+      
+      {/* Debug referral code display (for development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          // position: 'fixed',
+          // top: '10px',
+          // right: '10px',
+          // background: 'rgba(0,0,0,0.8)',
+          // color: 'white',
+          // padding: '8px 12px',
+          // borderRadius: '5px',
+          // fontSize: '12px',
+          // zIndex: 9999,
+          // fontFamily: 'monospace'
+        }}>
+          {/* <div>🔗 URL: {window.location.search}</div>
+          <div>📋 Ref: <span style={{color: '#4CAF50'}}>{referralCode || 'none'}</span></div>
+          <div>💾 Session: <span style={{color: '#FF9800'}}>{sessionStorage.getItem('referralCode') || 'none'}</span></div>
+          <div>🔄 Validating: <span style={{color: '#2196F3'}}>{isValidatingNeoId ? 'YES' : 'NO'}</span></div> */}
+        </div>
+      )}
       
       {/* Full Ocean Experience - Animated Elements di area luar */}
       
@@ -214,12 +449,12 @@ export default function App() {
         zIndex: 0
       }}>🐟</div>
 
-      {/* Main Content Container - Updated untuk konsisten dengan QrisPage */}
+      {/* Main Content Container */}
       <Box
         style={{
           margin: '0 auto',
           minHeight: '100vh',
-          maxWidth: 400, // Changed dari 600 ke 400 untuk konsisten dengan QrisPage
+          maxWidth: 400,
           overflowX: 'hidden',
           backgroundImage: 'url(/img/background.jpg)',
           backgroundSize: 'cover',
@@ -228,7 +463,7 @@ export default function App() {
           paddingBottom: 66,
           position: 'relative',
           zIndex: 2,
-          boxShadow: '0 0 50px rgba(0,0,0,0.2)' // Subtle shadow untuk memisahkan dari background
+          boxShadow: '0 0 50px rgba(0,0,0,0.2)'
         }}
       >
         {/* Optional: Subtle overlay untuk readability */}
@@ -256,17 +491,21 @@ export default function App() {
             onValidation={handleValidation}
           />
 
-          <ErrorAlert showError={showError} />
+          <ErrorAlert 
+            showError={showError} 
+            errorMessage={txtErr} // ✅ Pass custom error message
+          />
 
-          <TopUpGrid
+          {/* ✅ Changed to SelectionGrid with both handlers */}
+          <SelectionGrid
             isValidated={isValidated}
-            onImageClick={handleImageClick} // Updated function signature
+            onTopUpClick={handleTopUpClick}
+            onBongkarClick={handleBongkarClick}
           />
         </div>
       </Box>
 
       {/* CSS Animations */}
-      
       <style>{`
         @keyframes floatCloud1 {
           0% { transform: translateX(-120px); opacity: 0.3; }
