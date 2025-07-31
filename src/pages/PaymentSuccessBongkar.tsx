@@ -228,7 +228,7 @@ export default function BongkarSuccessPage() {
             fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
             textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
           }}>
-            Dana akan ditransfer ke rekening Anda dalam <strong><em>1-3 hari kerja</em></strong>.<br />Silakan tunggu konfirmasi lebih lanjut!
+            Dana kamu sudah berhasil ditransfer.<strong><em> Silahkan cek rekening anda</em></strong>.<br />Terima kasih telah menggunakan platfrom kami!
           </Text>
           
           <Box style={{
@@ -543,7 +543,7 @@ export default function BongkarSuccessPage() {
                 marginBottom: '30px',
                 textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
               }}>
-                Dana akan segera ditransfer
+                Silahkan cek rekening anda
               </Text>
 
               <Box style={{ 

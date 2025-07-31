@@ -37,6 +37,16 @@ export default function BankConfirmationPage() {
   const [targetNeoData, setTargetNeoData] = useState<{nick: string, coin: string} | null>(null);
   const [isLoadingNeoData, setIsLoadingNeoData] = useState(false);
 
+  // State untuk polling transaksi
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  // State untuk mencegah multiple submissions
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [isApiCalling, setIsApiCalling] = useState(false);
+
   // Ambil data dari state navigation
   const locationState = location.state as LocationState;
   const {
@@ -129,8 +139,214 @@ export default function BankConfirmationPage() {
 
   const formattedChipAmount = formatChipAmount(senderKoin);
 
-  // Function to submit transaction
+  // Function to get bank display name
+  const getBankDisplayName = (bankCode: string) => {
+    const bankMap: { [key: string]: string } = {
+      'bca': 'BCA',
+      'mandiri': 'MANDIRI',
+      'bni': 'BNI',
+      'bri': 'BRI',
+      'cimb': 'CIMB NIAGA',
+      'danamon': 'DANAMON',
+      'permata': 'PERMATA',
+      'ocbc': 'OCBC NISP',
+      'maybank': 'MAYBANK',
+      'btn': 'BTN',
+    };
+    return bankMap[bankCode] || bankCode.toUpperCase();
+  };
+
+  // Format chip amount with thousands separator and "chip" suffix
+  function formatChipAmountWithSuffix(amount: string) {
+    const num = parseInt(amount || '0', 10);
+    return `${num.toLocaleString('id-ID')} chip`;
+  }
+
+  // Function to check transaction status
+  const checkTransactionStatus = async (transactionId: number) => {
+    try {
+      const response = await apiService.checkInquiryStatus(transactionId);
+      
+      if (response.status === 'success' && response.data) {
+        const { status } = response.data;
+        
+        console.log('Transaction status:', status);
+        
+        if (status === 'SUCCESS') {
+          // Stop polling
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            setPollingInterval(null);
+          }
+          
+          setIsProcessing(false);
+          
+          // Navigate to success page
+          navigate('/success-bongkar', {
+            state: {
+              transactionData: response.data,
+              amount,
+              chipAmount,
+              bankData,
+              neoId,
+              whatsappNumber
+            }
+          });
+        } else if (status === 'FAILED') {
+          // Stop polling
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            setPollingInterval(null);
+          }
+          
+          setIsProcessing(false);
+          
+          // Show error modal
+          setModalType('error');
+          setModalTitle('Transaksi Gagal');
+          setModalMessage('Transaksi gagal diproses. Silakan coba lagi.');
+          setShowModal(true);
+        }
+        // If PENDING, continue polling
+      } else {
+        console.error('Error checking transaction status:', response.message);
+      }
+    } catch (error) {
+      console.error('Error checking transaction status:', error);
+      
+      // Stop polling on error
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+      
+      setIsProcessing(false);
+      
+      // Show error modal
+      setModalType('error');
+      setModalTitle('Error');
+      setModalMessage('Terjadi kesalahan saat mengecek status transaksi.');
+      setShowModal(true);
+    }
+  };
+
+  // Function to start polling transaction
+  const startPolling = (transactionId: number) => {
+    setIsProcessing(true);
+    
+    // Check immediately
+    checkTransactionStatus(transactionId);
+    
+    // Then check every 3 seconds
+    const interval = setInterval(() => {
+      checkTransactionStatus(transactionId);
+    }, 3000);
+    
+    setPollingInterval(interval);
+    
+    // Stop polling after 5 minutes (timeout)
+    const timeoutId = setTimeout(() => {
+      if (interval) {
+        clearInterval(interval);
+        setPollingInterval(null);
+        setIsProcessing(false);
+        
+        // Show timeout error
+        setModalType('error');
+        setModalTitle('Timeout');
+        setModalMessage('Transaksi membutuhkan waktu lebih lama dari biasanya. Silakan coba lagi nanti.');
+        setShowModal(true);
+      }
+    }, 300000); // 5 minutes
+    
+    // Store timeout for cleanup
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  };
+
+  // Function to cancel transaction
+  const handleCancelTransaction = async () => {
+    if (!transactionId || isCancelling || isSubmitting) return;
+    
+    // Show modal instead of window.confirm
+    setShowCancelModal(true);
+  };
+
+  // Function to confirm cancellation
+  const confirmCancellation = async () => {
+    if (!transactionId) return;
+    
+    setShowCancelModal(false);
+    setIsCancelling(true);
+    
+    try {
+      // Stop polling first
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+      setIsProcessing(false);
+      
+      console.log('🚫 [CONFIRMATION] Cancelling transaction ID:', transactionId);
+      
+      // Call cancel API with correct payload
+      const response = await apiService.cancelTransaction(transactionId);
+      
+      if (response.status === 'success') {
+        console.log('✅ [CONFIRMATION] Transaction cancelled successfully');
+        
+        // Reset states
+        setTransactionId(null);
+        setIsProcessing(false);
+        
+        // Show success message
+        setModalType('success');
+        setModalTitle('Berhasil');
+        setModalMessage('Transaksi berhasil dibatalkan.');
+        setShowModal(true);
+      } else {
+        throw new Error(response.message || 'Gagal membatalkan transaksi');
+      }
+    } catch (error) {
+      console.error('❌ [CONFIRMATION] Error cancelling transaction:', error);
+      
+      let errorMessage = 'Terjadi kesalahan saat membatalkan transaksi.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String(error.message);
+      }
+      
+      setModalType('error');
+      setModalTitle('Error');
+      setModalMessage(errorMessage);
+      setShowModal(true);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Function to submit transaction (dengan strict API call prevention)
   const handleSubmitTransaction = async () => {
+    // STRICT: Prevent ANY multiple calls
+    if (isSubmitting || hasSubmitted || transactionId || isApiCalling) {
+      console.log('⚠️  Submit BLOCKED:', { 
+        isSubmitting, 
+        hasSubmitted, 
+        hasTransactionId: !!transactionId,
+        isApiCalling 
+      });
+      return;
+    }
+
+    console.log('🔄 Starting transaction submission');
+
     // Validasi data yang diperlukan
     if (!bankData || !neoId || !whatsappNumber) {
       setModalType('error');
@@ -157,9 +373,18 @@ export default function BankConfirmationPage() {
       return;
     }
 
+    // Set ALL flags to prevent any duplicate calls
     setIsSubmitting(true);
+    setHasSubmitted(true);
+    setIsApiCalling(true);
 
     try {
+      // Double check sebelum API call
+      if (transactionId) {
+        console.log('⚠️  API call cancelled: transactionId already exists');
+        return;
+      }
+
       // Prepare data for API using the correct interface
       const requestData = {
         bank_id: bankData.bankId,
@@ -171,31 +396,25 @@ export default function BankConfirmationPage() {
         phone_no: whatsappNumber
       };
 
-      console.log('Submitting transaction with data:', requestData);
+      console.log('📤 CALLING API - createWebInquiry:', requestData);
 
-      // Call web inquiry API using the correct method
+      // SINGLE API CALL
       const response = await apiService.createWebInquiry(requestData);
+
+      console.log('📥 API Response received:', response);
 
       if (response.status === 'success' && response.data) {
         const { id } = response.data;
+        console.log('✅ Transaction submitted successfully with ID:', id);
         setTransactionId(id);
         
-        // Navigate to pending page
-        navigate('/pending-bongkar', {
-          state: {
-            transactionId: id,
-            amount,
-            chipAmount,
-            bankData,
-            neoId,
-            whatsappNumber
-          }
-        });
+        // Start polling for transaction status
+        startPolling(id);
       } else {
         throw new Error(response.message || 'Transaksi gagal diproses');
       }
     } catch (error) {
-      console.error('Error submitting transaction:', error);
+      console.error('❌ API Error:', error);
       
       let errorMessage = 'Terjadi kesalahan saat memproses transaksi.';
       
@@ -209,25 +428,117 @@ export default function BankConfirmationPage() {
       setModalTitle('Transaksi Gagal');
       setModalMessage(errorMessage);
       setShowModal(true);
+      
+      // Reset states on error to allow retry
+      setHasSubmitted(false);
+      setTransactionId(null);
     } finally {
       setIsSubmitting(false);
+      setIsApiCalling(false);
     }
   };
 
   // Fungsi tombol kembali
   function handleBack() {
+    // Stop polling if active
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+    setIsProcessing(false);
+    
     navigate(-1);
   }
 
-  // Fungsi lanjut - submit transaction
-  function handleNext() {
-    handleSubmitTransaction();
-  }
-
-  // Handle modal close
+  // Handle modal close (dengan proper state reset)
   const handleCloseModal = () => {
     setShowModal(false);
+    
+    // If it was an error during submission, reset states to allow retry
+    if (modalType === 'error' && !transactionId) {
+      console.log('🔄 Resetting states after error for retry');
+      setHasSubmitted(false);
+      setIsProcessing(false);
+      setIsApiCalling(false);
+    }
+    
+    // If it was a success message for cancellation, reset the form
+    if (modalType === 'success' && !transactionId) {
+      console.log('🔄 Resetting states after successful cancellation');
+      setIsProcessing(false);
+      setTransactionId(null);
+      setHasSubmitted(false);
+      setIsApiCalling(false);
+    }
   };
+
+  // Auto submit when component mounts (dengan STRICT prevention)
+  useEffect(() => {
+    // STRICT: Multiple layers of prevention
+    if (hasSubmitted || isSubmitting || isProcessing || transactionId || isApiCalling) {
+      console.log('⚠️  Auto-submit BLOCKED:', { 
+        hasSubmitted, 
+        isSubmitting, 
+        isProcessing, 
+        hasTransactionId: !!transactionId,
+        isApiCalling 
+      });
+      return;
+    }
+    
+    console.log('🚀 Starting auto-submit process');
+    
+    // Use ref to prevent multiple calls
+    let submitted = false;
+    
+    const autoSubmit = async () => {
+      try {
+        // Prevent race condition
+        if (submitted) {
+          console.log('⚠️  Auto-submit cancelled: already submitted in this cycle');
+          return;
+        }
+        submitted = true;
+        
+        // Mark as submitted immediately
+        setHasSubmitted(true);
+        
+        // Small delay to show the confirmation page briefly
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Triple check before submitting
+        if (isSubmitting || isProcessing || transactionId || isApiCalling) {
+          console.log('⚠️  Auto-submit cancelled: state changed during delay');
+          return;
+        }
+        
+        console.log('📝 Executing auto-submit');
+        await handleSubmitTransaction();
+      } catch (error) {
+        console.error('❌ Auto-submit error:', error);
+        // Reset on error so user can try again
+        setHasSubmitted(false);
+        submitted = false;
+      }
+    };
+    
+    // Add small delay to prevent immediate multiple calls
+    const timeoutId = setTimeout(autoSubmit, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      submitted = true; // Prevent execution if component unmounts
+    };
+  }, []); // STRICT: Empty dependency array
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   return (
     <Box style={{ 
@@ -436,246 +747,297 @@ export default function BankConfirmationPage() {
             justifyContent: 'space-between'
           }}>
             
-            {/* Title */}
-            <Text style={{
-              fontSize: '20px',
-              fontWeight: 900,
-              color: '#8B4513',
-              marginBottom: '15px',
-              fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
-              textShadow: '1px 1px 3px rgba(255,255,255,0.8)'
-            }}>
-              Konfirmasi Data Anda
-            </Text>
+            {/* Always show confirmation content - no conditional rendering */}
+            <>
+              {/* Title - show different title based on processing state */}
+              <Text style={{
+                fontSize: '20px',
+                fontWeight: 900,
+                color: '#8B4513',
+                marginBottom: '15px',
+                fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
+                textShadow: '1px 1px 3px rgba(255,255,255,0.8)'
+              }}>
+                {isProcessing ? 'Sedang Memproses Transaksi' : 'Konfirmasi Data Anda'}
+              </Text>
 
-            {/* Selected Amount Display */}
-            <Box style={{
-              padding: '15px',
-              marginBottom: '20px',
-              textAlign: 'left',
-              background: 'rgba(139, 69, 19, 0.1)',
-              borderRadius: '15px',
-              border: '2px solid rgba(139, 69, 19, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '15px'
-            }}>
-              {/* Coin Image Container */}
+              {/* Selected Amount Display with processing indicator */}
               <Box style={{
-                width: '60px',
-                height: '60px',
-                background: 'linear-gradient(145deg, #8B4513, #A0522D)',
-                borderRadius: '12px',
+                padding: '15px',
+                marginBottom: '10px',
+                textAlign: 'left',
+                background: isProcessing ? 'rgba(255, 165, 0, 0.1)' : 'rgba(139, 69, 19, 0.1)',
+                borderRadius: '15px',
+                border: isProcessing ? '2px solid rgba(255, 165, 0, 0.3)' : '2px solid rgba(139, 69, 19, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 6px 18px rgba(0,0,0,0.3)',
-                border: '2px solid #DAA520',
-                position: 'relative',
-                overflow: 'hidden'
+                gap: '15px'
               }}>
-                <img
-                  src="/img/coin.png"
-                  alt="Coin"
+                {/* Coin Image Container with processing state */}
+                <Box style={{
+                  width: '60px',
+                  height: '60px',
+                  background: isProcessing 
+                    ? 'linear-gradient(145deg, #FFA500, #FF8C00)' 
+                    : 'linear-gradient(145deg, #8B4513, #A0522D)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.3)',
+                  border: '2px solid #DAA520',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {isProcessing ? (
+                    <Loader size="md" color="white" />
+                  ) : (
+                    <img
+                      src="/img/coin.png"
+                      alt="Coin"
+                      style={{
+                        width: '35px',
+                        height: '35px',
+                        objectFit: 'contain',
+                        position: 'relative',
+                        zIndex: 1
+                      }}
+                    />
+                  )}
+                </Box>
+
+                {/* Text Content */}
+                <Box>
+                  <Text style={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#8B4513',
+                    marginBottom: '2px'
+                  }}>
+                    {isProcessing ? 'MEMPROSES' : 'BONGKAR'} {formattedChipAmount}
+                  </Text>
+                  <Text style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#8B4513'
+                  }}>
+                    (IDR {formatCurrency(senderIDR)})
+                  </Text>
+                </Box>
+              </Box>
+
+              {/* Processing Status Indicator */}
+              {isProcessing && (
+                <Box style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '10px',
+                  marginBottom: '15px',
+                  padding: '10px',
+                  background: 'rgba(255, 165, 0, 0.1)',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 165, 0, 0.3)'
+                }}>
+                  <Loader size="sm" color="orange" />
+                  <Text style={{
+                    fontSize: '14px',
+                    color: '#8B4513',
+                    fontWeight: 600
+                  }}>
+                    Mengecek status transaksi...
+                  </Text>
+                </Box>
+              )}
+
+              {/* Added Instruction Text */}
+              <Text style={{
+                fontSize: '12px',
+                fontWeight: 800,
+                color: '#8B4513',
+                marginBottom: '20px',
+                textAlign: 'center',
+                fontStyle: 'normal'
+              }}>
+                {isProcessing 
+                  ? 'TRANSAKSI SEDANG DIPROSES, HARAP TUNGGU...'
+                  : 'TRANSAKSI AKAN DIMULAI OTOMATIS, HARAP TUNGGU...'
+                }
+              </Text>
+
+              {/* Rekening Pengirim */}
+              <Box style={{ marginBottom: '16px', textAlign: 'left' }}>
+                <Box
                   style={{
-                    width: '35px',
-                    height: '35px',
-                    objectFit: 'contain',
-                    position: 'relative',
-                    zIndex: 1
+                    background: '#00D1FF',
+                    padding: '8px 0 7px',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    marginBottom: '12px',
                   }}
-                />
+                >
+                  <Text
+                    style={{
+                      fontWeight: 800,
+                      color: '#fff',
+                      fontSize: '15px',
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    Rekening Pengirim
+                  </Text>
+                </Box>
+                <Box>
+                  <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
+                    Rekening Bank <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{senderBank}</span>
+                  </Text>
+                  <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
+                    ID Neo Party <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{senderNeoPartyId}</span>
+                  </Text>
+                  <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
+                    Username Neo Party <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>
+                      {isLoadingNeoData ? 'Loading...' : (senderNeoData?.nick || 'Unknown')}
+                    </span>
+                  </Text>
+                  <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
+                    IDR <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{formatCurrency(senderIDR)}</span>
+                  </Text>
+                  <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
+                    Nama Rekening <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{senderAccountName}</span>
+                  </Text>
+                  <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700 }}>
+                    Koin <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>
+                      {isLoadingNeoData ? 'Loading...' : formatKoin(senderNeoData?.coin || senderKoin)}
+                    </span>
+                  </Text>
+                </Box>
               </Box>
 
-              {/* Text Content */}
-              <Box>
-                <Text style={{
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: '#8B4513',
-                  marginBottom: '2px'
-                }}>
-                  BONGKAR {formattedChipAmount}
-                </Text>
-                <Text style={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#8B4513'
-                }}>
-                  (IDR {formatCurrency(senderIDR)})
-                </Text>
-              </Box>
-            </Box>
-
-            {/* Rekening Pengirim */}
-            <Box style={{ marginBottom: '16px', textAlign: 'left' }}>
+              {/* Kirim sesuai Neo ID di bawah */}
               <Box
                 style={{
-                  background: '#00D1FF',
-                  padding: '8px 0 7px',
+                  background: '#FF7A1A',
                   borderRadius: '10px',
-                  textAlign: 'center',
+                  padding: '10px 12px',
+                  color: '#fff',
                   marginBottom: '12px',
+                }}
+              >
+                <Text style={{ fontWeight: 800, fontSize: '15px', letterSpacing: 0.2 }}>
+                  Kirim Sesuai Neo ID di Bawah
+                </Text>
+              </Box>
+
+              {/* Target info */}
+              <Box style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <Text style={{ fontSize: '14px', fontWeight: 900, color: '#E69034', marginBottom: '4px' }}>
+                  ID Neo Party <span style={{ float: 'right', fontWeight: 800, color: '#8B4513' }}>{targetNeoId}</span>
+                </Text>
+                <Text style={{ fontSize: '12px', fontWeight: 600, color: '#B5894F', marginBottom: '4px' }}>
+                  Username Neo Party <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>
+                    {isLoadingNeoData ? 'Loading...' : targetUsername}
+                  </span>
+                </Text>
+                <Text style={{ fontSize: '12px', fontWeight: 600, color: '#B5894F' }}>
+                  Koin <span style={{ float: 'right', fontWeight: 700, color: '#8B4513' }}>
+                    {isLoadingNeoData ? 'Loading...' : formatKoin(targetKoin)}
+                  </span>
+                </Text>
+              </Box>
+
+              {/* Catatan */}
+              <Text
+                style={{
+                  fontSize: '10px',
+                  color: '#E69034',
+                  marginTop: '8px',
+                  marginBottom: '8px',
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                }}
+              >
+                *Pastikan anda mengirim chip sesuai dengan jumlah yang telah dipilih agar proses lebih cepat
+              </Text>
+
+              {/* Warning - show different message based on processing state */}
+              <Box
+                style={{
+                  background: 'rgba(255, 165, 0, 0.1)',
+                  borderRadius: '10px',
+                  padding: '8px 10px',
+                  border: '1px solid rgba(255, 165, 0, 0.3)',
+                  marginTop: '6px',
+                  marginBottom: '16px',
                 }}
               >
                 <Text
                   style={{
-                    fontWeight: 800,
-                    color: '#fff',
-                    fontSize: '15px',
-                    letterSpacing: 0.2,
+                    fontSize: '10px',
+                    color: '#8B4513',
+                    lineHeight: 1.3,
+                    textAlign: 'center',
                   }}
                 >
-                  Rekening Pengirim
+                  {isProcessing 
+                    ? 'Jangan tutup halaman ini. Sistem akan otomatis memperbarui status transaksi Anda.'
+                    : 'Silakan pastikan kembali bahwa semua informasi yang Anda masukkan sudah benar. Kami tidak dapat melakukan perubahan apabila terjadi kesalahan'
+                  }
                 </Text>
               </Box>
-              <Box>
-                <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
-                  Rekening Bank <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{senderBank}</span>
-                </Text>
-                <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
-                  ID Neo Party <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{senderNeoPartyId}</span>
-                </Text>
-                <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
-                  Username Neo Party <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>
-                    {isLoadingNeoData ? 'Loading...' : (senderNeoData?.nick || 'Unknown')}
-                  </span>
-                </Text>
-                <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
-                  IDR <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{formatCurrency(senderIDR)}</span>
-                </Text>
-                <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700, marginBottom: '4px' }}>
-                  Nama Rekening <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>{senderAccountName}</span>
-                </Text>
-                <Text style={{ fontSize: '12px', color: '#B5894F', fontWeight: 700 }}>
-                  Koin <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>
-                    {isLoadingNeoData ? 'Loading...' : formatKoin(senderNeoData?.coin || senderKoin)}
-                  </span>
-                </Text>
+
+              {/* Tombol - Hanya tampilkan Kembali dan Batal Transaksi */}
+              <Box style={{
+                display: 'flex',
+                gap: '10px',
+                justifyContent: 'center'
+              }}>
+                <button 
+                  onClick={handleBack} 
+                  disabled={isSubmitting || isCancelling}
+                  style={{
+                    background: 'linear-gradient(145deg, #6C757D, #5A6268)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '10px 20px',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    cursor: (isSubmitting || isCancelling) ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(108, 117, 125, 0.4)',
+                    transition: 'all 0.3s ease',
+                    outline: 'none',
+                    opacity: (isSubmitting || isCancelling) ? 0.6 : 1
+                  }}
+                >
+                  Kembali
+                </button>
+                
+                <button 
+                  onClick={handleCancelTransaction}
+                  disabled={isSubmitting || isCancelling || !transactionId}
+                  style={{
+                    background: 'linear-gradient(145deg, #DC3545, #C82333)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '10px 20px',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    cursor: (isSubmitting || isCancelling || !transactionId) ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(220, 53, 69, 0.4)',
+                    transition: 'all 0.3s ease',
+                    outline: 'none',
+                    opacity: (isSubmitting || isCancelling || !transactionId) ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {(isSubmitting || isCancelling) && <Loader size="xs" color="white" />}
+                  {isSubmitting ? 'Memproses...' : (isCancelling ? 'Membatalkan...' : 'Batal Transaksi')}
+                </button>
               </Box>
-            </Box>
-
-            {/* Kirim sesuai Neo ID di bawah */}
-            <Box
-              style={{
-                background: '#FF7A1A',
-                borderRadius: '10px',
-                padding: '10px 12px',
-                color: '#fff',
-                marginBottom: '12px',
-              }}
-            >
-              <Text style={{ fontWeight: 800, fontSize: '15px', letterSpacing: 0.2 }}>
-                Kirim Sesuai Neo ID di Bawah
-              </Text>
-            </Box>
-
-            {/* Target info */}
-            <Box style={{ marginBottom: '12px', textAlign: 'left' }}>
-              <Text style={{ fontSize: '14px', fontWeight: 900, color: '#E69034', marginBottom: '4px' }}>
-                ID Neo Party <span style={{ float: 'right', fontWeight: 800, color: '#8B4513' }}>{targetNeoId}</span>
-              </Text>
-              <Text style={{ fontSize: '12px', fontWeight: 600, color: '#B5894F', marginBottom: '4px' }}>
-                Username Neo Party <span style={{ float: 'right', fontWeight: 600, color: '#8B4513' }}>
-                  {isLoadingNeoData ? 'Loading...' : targetUsername}
-                </span>
-              </Text>
-              <Text style={{ fontSize: '12px', fontWeight: 600, color: '#B5894F' }}>
-                Koin <span style={{ float: 'right', fontWeight: 700, color: '#8B4513' }}>
-                  {isLoadingNeoData ? 'Loading...' : formatKoin(targetKoin)}
-                </span>
-              </Text>
-            </Box>
-
-            {/* Catatan */}
-            <Text
-              style={{
-                fontSize: '10px',
-                color: '#E69034',
-                marginTop: '8px',
-                marginBottom: '8px',
-                fontWeight: 600,
-                lineHeight: 1.3,
-              }}
-            >
-              *Pastikan anda mengirim chip sesuai dengan jumlah yang telah dipilih agar proses lebih cepat
-            </Text>
-
-            {/* Warning */}
-            <Box
-              style={{
-                background: 'rgba(255, 165, 0, 0.1)',
-                borderRadius: '10px',
-                padding: '8px 10px',
-                border: '1px solid rgba(255, 165, 0, 0.3)',
-                marginTop: '6px',
-                marginBottom: '16px',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: '10px',
-                  color: '#8B4513',
-                  lineHeight: 1.3,
-                  textAlign: 'center',
-                }}
-              >
-                Silakan pastikan kembali bahwa semua informasi yang Anda masukkan sudah benar. Kami tidak dapat melakukan perubahan apabila terjadi kesalahan
-              </Text>
-            </Box>
-
-            {/* Tombol */}
-            <Box style={{
-              display: 'flex',
-              gap: '10px',
-              justifyContent: 'center'
-            }}>
-              <button 
-                onClick={handleBack} 
-                disabled={isSubmitting}
-                style={{
-                  background: 'linear-gradient(145deg, #FFA500, #FF8C00)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  padding: '10px 20px',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '12px',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 12px rgba(255, 165, 0, 0.4)',
-                  transition: 'all 0.3s ease',
-                  outline: 'none',
-                  opacity: isSubmitting ? 0.6 : 1
-                }}
-              >
-                Kembali
-              </button>
-              
-              <button 
-                onClick={handleNext}
-                disabled={isSubmitting}
-                style={{
-                  background: 'linear-gradient(145deg, #32CD32, #228B22)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  padding: '10px 20px',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '12px',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 12px rgba(50, 205, 50, 0.4)',
-                  transition: 'all 0.3s ease',
-                  outline: 'none',
-                  opacity: isSubmitting ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                {isSubmitting && <Loader size="xs" color="white" />}
-                {isSubmitting ? 'Memproses...' : 'Lanjutkan'}
-              </button>
-            </Box>
+            </>
           </Box>
         </Box>
       </Box>
@@ -724,6 +1086,73 @@ export default function BankConfirmationPage() {
         </Box>
       </Modal>
 
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        opened={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Konfirmasi Pembatalan"
+        centered
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+      >
+        <Box style={{ textAlign: 'center', padding: '20px' }}>
+          <Text style={{ 
+            fontSize: '16px', 
+            lineHeight: 1.5,
+            color: '#2c3e50',
+            marginBottom: '20px'
+          }}>
+            Apakah Anda yakin ingin membatalkan transaksi ini?
+          </Text>
+          
+          <Text style={{ 
+            fontSize: '14px', 
+            lineHeight: 1.4,
+            color: '#e74c3c',
+            marginBottom: '25px',
+            fontWeight: 600
+          }}>
+            Transaksi sebesar IDR {parseInt(amount || '0').toLocaleString('id-ID')} akan dibatalkan.
+          </Text>
+          
+          <Box style={{ 
+            display: 'flex', 
+            gap: '15px', 
+            justifyContent: 'center' 
+          }}>
+            <Button
+              onClick={() => setShowCancelModal(false)}
+              variant="outline"
+              color="gray"
+              style={{
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }}
+            >
+              Tidak
+            </Button>
+            
+            <Button
+              onClick={confirmCancellation}
+              color="red"
+              style={{
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                background: 'linear-gradient(145deg, #DC3545, #C82333)'
+              }}
+            >
+              Ya, Batalkan
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
       {/* CSS Animations */}
       <style>{`
         @keyframes bounce {
@@ -764,6 +1193,12 @@ export default function BankConfirmationPage() {
           0% { transform: translateY(0); }
           50% { transform: translateY(-10px); }
           100% { transform: translateY(0); }
+        }
+        
+        @keyframes pendingPulse {
+          0% { transform: scale(1); opacity: 0.7; }
+          50% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 0.7; }
         }
       `}</style>
     </Box>

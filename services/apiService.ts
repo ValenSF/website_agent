@@ -127,10 +127,10 @@ export interface BankAccountInquiryRequest {
   agent_referral: string; // Tambahkan agent_referral
 }
 
-export interface BankAccountInquiryResponse {
-  status: string;
+export interface BankAccountInquirySuccessResponse {
+  status: 'success';
   message: string;
-  data?: {
+  data: {
     user_id: number;
     user_name: string | null;
     neo_player_id: string;
@@ -141,8 +141,39 @@ export interface BankAccountInquiryResponse {
     };
     bank_accounts: BankAccountData[];
     total_accounts: number;
+    registration_required: false;
   };
 }
+
+export interface BankAccountInquiryNotRegisteredResponse {
+  status: 'not_registered';
+  message: string;
+  data: {
+    neo_player_id: string;
+    agent_info: {
+      id: number;
+      username: string;
+      referral_code: string;
+    };
+    bank_accounts: [];
+    total_accounts: 0;
+    registration_required: true;
+    registration_url: string;
+  };
+}
+
+export interface BankAccountInquiryErrorResponse {
+  status: 'failed' | 'error';
+  message: string;
+  errors?: Record<string, string[]>;
+  data?: undefined;
+}
+
+// Union type untuk semua kemungkinan response
+export type BankAccountInquiryResponse = 
+  | BankAccountInquirySuccessResponse 
+  | BankAccountInquiryNotRegisteredResponse 
+  | BankAccountInquiryErrorResponse;
 
 export interface NeoPersonalInfoRequest {
   id: number;
@@ -170,6 +201,8 @@ export interface CancelTransactionResponse {
   message: string;
   data?: any;
 }
+
+
 
 const API_BASE_URL = 'https://api.hidupcuan.org/api';
 // const API_BASE_URL = 'https://staging-api.hidupcuan.org/api';
@@ -352,7 +385,7 @@ class ApiService {
   async getBankAccounts(neoPlayerId: string, agentReferral: string): Promise<BankAccountInquiryResponse> {
     const requestData: BankAccountInquiryRequest = {
       neo_player_id: neoPlayerId,
-      agent_referral: agentReferral, // Tambahkan agent_referral
+      agent_referral: agentReferral,
     };
 
     console.log('🏦 [API] Fetching bank accounts with agent validation:', {
@@ -370,19 +403,16 @@ class ApiService {
       console.log('📨 [API] Bank accounts response:', {
         status: response.status,
         message: response.message,
-        userId: response.data?.user_id,
-        agentInfo: response.data?.agent_info,
-        totalAccounts: response.data?.total_accounts || 0,
-        accounts: response.data?.bank_accounts || []
+        data: response.data
       });
       
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [API] Failed to fetch bank accounts:', error);
       throw error;
     }
   }
-
+  
   // NEW: Get bank ID by name (helper function)
   getBankIdByName(bankName: string, banksList: BankData[]): number {
     const bank = banksList.find(b => 

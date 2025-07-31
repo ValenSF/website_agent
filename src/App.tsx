@@ -6,7 +6,7 @@ import Header from './components/Header';
 import InputSection from './components/InputSection';
 import ErrorAlert from './components/ErrorAlert';
 import SelectionGrid from './components/SelectionGrid'; // ✅ Changed from TopUpGrid to SelectionGrid
-import { apiService, BankAccountData } from './../services/apiService';
+import { apiService, BankAccountData, BankAccountInquiryResponse } from './../services/apiService';
 
 export default function App() {
   const [neoId, setNeoId] = useState('');
@@ -20,6 +20,14 @@ export default function App() {
   const [isValidatingNeoId, setIsValidatingNeoId] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<BankAccountData[]>([]);
   const [isProcessingBongkar, setIsProcessingBongkar] = useState(false);
+  const [notRegisteredData, setNotRegisteredData] = useState<any>(null);
+
+// ✅ Helper function - letakkan SEBELUM handleBongkarClick
+const shouldNavigateNotRegistered = (amount: string, chipAmount: string) => {
+  return notRegisteredData && 
+         notRegisteredData.amount === amount && 
+         notRegisteredData.chipAmount === chipAmount;
+};
   
   const navigate = useNavigate();
 
@@ -168,7 +176,46 @@ export default function App() {
     }
   };
 
-  const handleBongkarClick = async (amount: string, chipAmount: string) => {
+  // ✅ Complete handleBongkarClick function
+const handleBongkarClick = async (amount: string, chipAmount: string) => {
+  // ✅ CHECK PERTAMA: Jika user sudah pernah klik dan mendapat not_registered response
+  if (shouldNavigateNotRegistered(amount, chipAmount)) {
+    console.log('🔄 [APP] User clicking again after not_registered notification, proceeding to bank-form...');
+    
+    const { response, finalReferralCode } = notRegisteredData;
+    
+    // Save data ke storage
+    localStorage.setItem('neo_player_id', neoId.trim());
+    localStorage.setItem('agent_referral', finalReferralCode);
+    sessionStorage.setItem('neo_player_id', neoId.trim());
+    sessionStorage.setItem('agent_referral', finalReferralCode);
+    
+    // Clear the not registered data
+    setNotRegisteredData(null);
+    
+    // Navigate dengan data not registered
+    navigate('/bank-form', {
+      state: {
+        amount,
+        chipAmount,
+        neoId: neoId.trim(),
+        neoPlayerId: neoId.trim(),
+        whatsappNumber: whatsappNumber.trim(),
+        agentReferral: finalReferralCode,
+        bankAccounts: [],
+        userInfo: null,
+        agentInfo: response.data.agent_info,
+        preValidated: true,
+        registrationRequired: true,
+        registrationMessage: response.message,
+        registrationUrl: response.data.registration_url
+      }
+    });
+    
+    return; // ✅ STOP di sini jika sudah navigate
+  }
+
+  // ✅ VALIDATION - Klik pertama kali
   if (!isValidated) {
     setTxtErr('Mohon lengkapi dan validasi semua field terlebih dahulu');
     setShowError(true);
@@ -186,10 +233,10 @@ export default function App() {
 
   const finalReferralCode = referralCode || sessionStorage.getItem('referralCode') || 'default_ref';
 
-  // ✅ NEW: Validate Neo ID dan load bank accounts setelah klik bongkar
+  // ✅ Validate Neo ID dan load bank accounts setelah klik bongkar
   setIsProcessingBongkar(true);
   setTxtErr('');
-  setShowError(false); // ✅ RESET error state at start
+  setShowError(false);
   
   try {
     console.log('🔍 [APP] Validating Neo ID and loading bank accounts:', {
@@ -198,9 +245,13 @@ export default function App() {
     });
     
     // Hit API bank-accounts untuk validasi sekaligus ambil data
-    const response = await apiService.getBankAccounts(neoId.trim(), finalReferralCode);
+    const response: BankAccountInquiryResponse = await apiService.getBankAccounts(neoId.trim(), finalReferralCode);
     
-    if (response.status === 'success' && response.data) {
+    console.log('📊 [APP] API Response full:', response);
+    
+    // ✅ Handle success case (user sudah terdaftar)
+    if (response.status === 'success') {
+      setNotRegisteredData(null); // Clear any previous not registered data
       console.log('✅ [APP] Bank accounts loaded successfully:', response.data.bank_accounts.length);
       
       // Save data ke storage
@@ -209,7 +260,7 @@ export default function App() {
       sessionStorage.setItem('neo_player_id', neoId.trim());
       sessionStorage.setItem('agent_referral', finalReferralCode);
 
-      // ✅ ONLY navigate if successful
+      // Navigate ke bank-form dengan data lengkap
       navigate('/bank-form', {
         state: {
           amount,
@@ -225,35 +276,80 @@ export default function App() {
             neo_player_id: response.data.neo_player_id
           },
           agentInfo: response.data.agent_info,
-          preValidated: true
+          preValidated: true,
+          registrationRequired: false
         }
       });
       
+    // ✅ Handle not registered case (Neo ID valid tapi belum daftar)
+    } else if (response.status === 'not_registered') {
+      console.log('⚠️ [APP] User not registered:', response.message);
+      
+      // ✅ TAMPILKAN NOTIFIKASI DAN SIMPAN DATA
+      setTxtErr(`${response.message} - Klik tombol sekali lagi untuk melanjutkan proses bongkar.`);
+      setShowError(true);
+      setTimeout(() => setShowError(false), 6000);
+      
+      // Simpan data untuk navigate nanti jika user klik lagi
+      setNotRegisteredData({
+        amount,
+        chipAmount,
+        response: response,
+        finalReferralCode
+      });
+      
+      return; // ✅ STOP di sini, tidak navigate sekarang
+      
+    // ✅ Handle validation errors (Neo ID tidak valid)
     } else {
-        // Handle validation errors
-        let errorMessage = 'Neo ID tidak valid';
-        
-        if (response.message === 'LoadPlayerDataFailed') {
-          errorMessage = 'Neo ID tidak ditemukan. Pastikan ID Anda benar.';
-        } else if (response.message) {
-          errorMessage = response.message;
-        }
-        
-        console.log('❌ [APP] Neo ID validation failed:', response.message);
-        setTxtErr(errorMessage);
-        setShowError(true);
-        setTimeout(() => setShowError(false), 4000);
+      setNotRegisteredData(null); // Clear not registered data on error
+      let errorMessage = 'Neo ID tidak valid';
+      
+      if (response.message === 'LoadPlayerDataFailed') {
+        errorMessage = 'Neo ID tidak ditemukan. Pastikan ID Anda benar.';
+      } else if (response.message) {
+        errorMessage = response.message;
       }
       
-    } catch (error) {
-      console.error('🚨 [APP] Neo ID validation error:', error);
-      setTxtErr('Terjadi kesalahan saat validasi Neo ID. Silakan coba lagi.');
+      console.log('❌ [APP] Neo ID validation failed:', response.message);
+      setTxtErr(errorMessage);
       setShowError(true);
       setTimeout(() => setShowError(false), 4000);
-    } finally {
-      setIsValidatingNeoId(false);
     }
-  };
+      
+  } catch (error: any) {
+    setNotRegisteredData(null); // Clear not registered data on error
+    console.error('🚨 [APP] Neo ID validation error:', error);
+    
+    // ✅ Better error handling
+    let errorMessage = 'Terjadi kesalahan saat validasi Neo ID. Silakan coba lagi.';
+    
+    // Handle specific error cases
+    if (error?.response) {
+      if (error.response.status === 422) {
+        // Validation errors from backend
+        const errors = error.response.data?.errors;
+        if (errors?.neo_player_id) {
+          errorMessage = errors.neo_player_id[0];
+        } else if (errors?.agent_referral) {
+          errorMessage = errors.agent_referral[0];
+        } else {
+          errorMessage = error.response.data?.message || errorMessage;
+        }
+      } else if (error.response.status === 500) {
+        errorMessage = 'Server error. Silakan coba lagi nanti.';
+      }
+    } else if (error?.request) {
+      errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+    }
+    
+    setTxtErr(errorMessage);
+    setShowError(true);
+    setTimeout(() => setShowError(false), 4000);
+  } finally {
+    setIsProcessingBongkar(false);
+  }
+};
 
   return (
     <Box style={{ 
