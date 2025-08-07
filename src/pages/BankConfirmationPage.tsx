@@ -30,7 +30,7 @@ export default function BankConfirmationPage() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [modalType, setModalType] = useState('info'); // 'info', 'error', 'success'
-  const [transactionId, setTransactionId] = useState<number | null>(null);
+  const [transactionId, setTransactionId] = useState<any>('');
   
   // State untuk Neo Player data
   const [senderNeoData, setSenderNeoData] = useState<{nick: string, coin: string} | null>(null);
@@ -993,23 +993,39 @@ export default function BankConfirmationPage() {
               }}>
                 <button 
                   onClick={handleBack} 
-                  disabled={isSubmitting || isCancelling}
+                  disabled={isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing)}
                   style={{
-                    background: 'linear-gradient(145deg, #6C757D, #5A6268)',
+                    background: (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing))
+                      ? 'linear-gradient(145deg, #ADB5BD, #868E96)'  // Disabled color
+                      : 'linear-gradient(145deg, #6C757D, #5A6268)',  // Normal color
                     border: 'none',
                     borderRadius: '10px',
                     padding: '10px 20px',
                     color: 'white',
                     fontWeight: 'bold',
                     fontSize: '12px',
-                    cursor: (isSubmitting || isCancelling) ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 4px 12px rgba(108, 117, 125, 0.4)',
+                    cursor: (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing)) 
+                      ? 'not-allowed' 
+                      : 'pointer',
+                    boxShadow: (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing))
+                      ? '0 2px 6px rgba(108, 117, 125, 0.2)'  // Reduced shadow when disabled
+                      : '0 4px 12px rgba(108, 117, 125, 0.4)',
                     transition: 'all 0.3s ease',
                     outline: 'none',
-                    opacity: (isSubmitting || isCancelling) ? 0.6 : 1
+                    opacity: (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing)) ? 0.5 : 1,
+                    transform: (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing)) ? 'scale(0.98)' : 'scale(1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}
+                  title={
+                    (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing))
+                      ? "Tidak dapat kembali saat transaksi sedang berjalan"
+                      : "Kembali ke halaman sebelumnya"
+                  }
                 >
-                  Kembali
+                  {(isSubmitting || isProcessing) && <Loader size="xs" color="white" />}
+                  {isSubmitting || isProcessing ? 'Harap Tunggu...' : 'Kembali'}
                 </button>
                 
                 <button 

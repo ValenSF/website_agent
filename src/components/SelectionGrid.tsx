@@ -1,7 +1,8 @@
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { Box, Text, useMantineTheme } from '@mantine/core';
 import TopUpItem from './TopUpItem';
 import BongkarItem from './BongkarItem';
+import axios from "axios"
 
 // Memoize item untuk hindari re-render
 const MemoTopUpItem = memo(TopUpItem);
@@ -42,6 +43,34 @@ const bongkarData = [
 ];
 
 function TopUpGrid({ isValidated, onClick }: { isValidated: boolean; onClick: (amount: string, chipAmount: string) => void }) {
+  useEffect(() => {
+    fetchList()
+  }, [])
+
+  const [dpList, setDpList] = useState([])
+
+  async function fetchList() {
+    try {
+      const { data } = await axios.get('https://open-api.hidupcuan.org/api/deposit-amounts', {})
+
+      // ✅ TopUp List: Filter dulu, baru map
+      const dpList = data?.data
+        .filter((val: any) => val.amount > 0)  // ✅ Filter dulu
+        .map((val: any) => ({
+          image: '/img/coin.png',
+          amount: val.amount.toString(),
+          chipAmount: val.display_chip_amount,
+          description: `TOP UP ${val.display_chip_amount}`,
+          price: val.display_currency  // ✅ Correct: pakai display_currency
+        }))
+
+      setDpList(dpList || [])  // ✅ Fallback to empty array
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
   return (
     <Box style={{
       margin: '0 auto',
@@ -55,7 +84,7 @@ function TopUpGrid({ isValidated, onClick }: { isValidated: boolean; onClick: (a
         gap: '15px',
         width: '100%'
       }}>
-        {topUpData.map((item, index) => (
+        {dpList?.map((item: any, index) => (
           <MemoTopUpItem
             key={index}
             image={item.image}
@@ -79,6 +108,32 @@ function BongkarGrid({
   isValidated: boolean; 
   onClick: (amount: string, chipAmount: string) => void;
 }) {
+  useEffect(() => {
+    fetchList()
+  }, [])
+
+  const [wdList, setWdList] = useState([])
+
+  async function fetchList() {
+    try {
+      const { data } = await axios.get('https://open-api.hidupcuan.org/api/deposit-amounts', {})
+
+      // ✅ Withdraw List: Filter dulu, baru map  
+      const wdList = data?.data
+        .filter((val: any) => val.wd_amount > 0)  // ✅ Filter dulu
+        .map((val: any) => ({
+          image: '/img/coin.png',
+          amount: val.wd_amount.toString(),  // ✅ Correct: pakai wd_amount
+          chipAmount: val.display_chip_amount,
+          description: `BONGKAR ${val.display_chip_amount}`,
+          price: `(IDR ${val.wd_amount.toLocaleString('id-ID')})`  // ✅ Correct: format wd_amount
+        }))
+
+      setWdList(wdList || [])  // ✅ Fallback to empty array
+    } catch (error) {
+      console.log(error)
+    }
+  }
   return (
     <Box style={{
       margin: '0 auto',
@@ -92,7 +147,7 @@ function BongkarGrid({
         gap: '15px',
         width: '100%'
       }}>
-        {bongkarData.map((item, index) => (
+        {wdList?.map((item: any, index) => (
           <MemoBongkarItem
             key={index}
             image={item.image}
