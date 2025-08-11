@@ -2,16 +2,18 @@ import { Box, Text } from '@mantine/core';
 
 interface TopUpItemProps {
   image: string;
+  amount_id: number;
   amount: string;
   topUpAmount: string; // Add this prop
   description: string;
   price: string;
   isValidated: boolean;
-  onImageClick: (amount: string, topUpAmount: string) => void; // Update signature
+  onImageClick: (amount_id: number, amount: string, topUpAmount: string) => void; // Update signature
 }
 
 export default function TopUpItem({ 
   image, 
+  amount_id,
   amount,
   topUpAmount, // Add this prop
   description, 
@@ -55,7 +57,7 @@ export default function TopUpItem({
         justifyContent: 'space-between',
         boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
       }}
-      onClick={() => isValidated && onImageClick(amount, topUpAmount)} // Pass both values
+      onClick={() => isValidated && onImageClick(amount_id, amount, topUpAmount)} // Pass both values
       onMouseOver={handleMouseOver}
       onMouseOut={handleMouseOut}
     >

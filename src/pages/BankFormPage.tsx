@@ -11,6 +11,7 @@ interface BankFormData {
 }
 
 interface LocationState {
+  amount_id?: number;
   amount?: string;
   chipAmount?: string;
   neoPlayerId?: string;
@@ -49,6 +50,7 @@ export default function BankFormPage() {
   // Get data from navigation state
   const locationState = location.state as LocationState;
   const selectedAmount = locationState?.amount || "15.000";
+  const selectedAmountId = locationState?.amount_id || 0;
   const selectedChipAmount = locationState?.chipAmount || "200M";
 
   // Dynamic neo_player_id dan agent_referral
@@ -404,7 +406,8 @@ export default function BankFormPage() {
   const handleSubmit = () => {
   if (validateForm()) {
     // Get amount ID using the existing helper function
-    const amountId = apiService.getBongkarAmountId(selectedAmount);
+    const amountId = selectedAmountId;
+    console.log('AMOUNT ID: ', amountId)
     
     navigate('/bank-confirmation', {
       state: {

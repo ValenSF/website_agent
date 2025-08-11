@@ -37,11 +37,12 @@ export default function BankConfirmationPage() {
   const [targetNeoData, setTargetNeoData] = useState<{nick: string, coin: string} | null>(null);
   const [isLoadingNeoData, setIsLoadingNeoData] = useState(false);
 
-  // State untuk polling transaksi
+  // State untuk polling transaksi dan timer
   const [isProcessing, setIsProcessing] = useState(false);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [countdown, setCountdown] = useState(300);
 
   // State untuk mencegah multiple submissions
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -112,6 +113,53 @@ export default function BankConfirmationPage() {
     loadNeoPlayerData();
   }, [neoId]);
 
+  // Countdown timer logic
+  useEffect(() => {
+    if (!isProcessing) return;
+
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            setPollingInterval(null);
+          }
+          setIsProcessing(false);
+          handleTimeout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isProcessing]);
+
+  // Function to format time for display
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Function to handle timeout
+  const handleTimeout = async () => {
+    if (transactionId) {
+      try {
+        await apiService.cancelTransaction(transactionId);
+        console.log('✅ [TIMEOUT] Transaction cancelled successfully');
+      } catch (err) {
+        console.error('❌ [TIMEOUT] Failed to cancel transaction:', err);
+      }
+    }
+    
+    setModalType('error');
+    setModalTitle('Timeout');
+    setModalMessage('Transaksi dibatalkan karena melebihi batas waktu.');
+    setShowModal(true);
+  };
+
   // Function to format currency (IDR)
   const formatCurrency = (amount: string) => {
     if (!amount) return "-";
@@ -129,14 +177,22 @@ export default function BankConfirmationPage() {
 
   // Function to format chip amount display
   const formatChipAmount = (chipAmount: string) => {
-    const amount = parseInt(chipAmount);
-    if (amount >= 1000) {
-      return `${amount / 1000}B`;
-    } else {
+    const match = chipAmount.match(/^(\d+(?:\.\d+)?)([MB])$/i);
+
+    if (!match) return chipAmount; // kalau format tidak sesuai
+
+    let [_, value, unit] = match;
+    let amount = parseFloat(value);
+
+    if (unit.toUpperCase() === "B") {
+      return `${amount}B`;
+    } else if (unit.toUpperCase() === "M") {
+      if (amount >= 1000) {
+        return `${(amount / 1000).toFixed(1)}B`;
+      }
       return `${amount}M`;
     }
   };
-
   const formattedChipAmount = formatChipAmount(senderKoin);
 
   // Function to get bank display name
@@ -244,20 +300,26 @@ export default function BankConfirmationPage() {
     
     setPollingInterval(interval);
     
-    // Stop polling after 5 minutes (timeout)
-    const timeoutId = setTimeout(() => {
+    // Stop polling after 1 minute (timeout)
+    const timeoutId = setTimeout(async () => {
       if (interval) {
         clearInterval(interval);
         setPollingInterval(null);
         setIsProcessing(false);
-        
-        // Show timeout error
+
+        try {
+          // Batalkan transaksi kalau belum selesai
+          await apiService.cancelTransaction(transactionId);
+        } catch (err) {
+          console.error("❌ Gagal membatalkan transaksi:", err);
+        }
+
         setModalType('error');
         setModalTitle('Timeout');
-        setModalMessage('Transaksi membutuhkan waktu lebih lama dari biasanya. Silakan coba lagi nanti.');
+        setModalMessage('Transaksi dibatalkan karena melebihi batas waktu.');
         setShowModal(true);
       }
-    }, 300000); // 5 minutes
+    }, 300000); 
     
     // Store timeout for cleanup
     return () => {
@@ -454,21 +516,17 @@ export default function BankConfirmationPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     
-    // If it was an error during submission, reset states to allow retry
-    if (modalType === 'error' && !transactionId) {
-      console.log('🔄 Resetting states after error for retry');
-      setHasSubmitted(false);
-      setIsProcessing(false);
-      setIsApiCalling(false);
-    }
+    // Reset states for both error and success cases to allow retry or new transaction
+    console.log('🔄 Resetting states after modal close');
+    setHasSubmitted(false);
+    setIsProcessing(false);
+    setIsApiCalling(false);
+    setTransactionId(null);
     
-    // If it was a success message for cancellation, reset the form
-    if (modalType === 'success' && !transactionId) {
-      console.log('🔄 Resetting states after successful cancellation');
-      setIsProcessing(false);
-      setTransactionId(null);
-      setHasSubmitted(false);
-      setIsApiCalling(false);
+    // Navigate to bank-form only for error modals
+    if (modalType === 'error') {
+      console.log('🔄 Navigating to /bank-form due to error modal');
+      navigate(-1);
     }
   };
 
@@ -749,7 +807,7 @@ export default function BankConfirmationPage() {
             
             {/* Always show confirmation content - no conditional rendering */}
             <>
-              {/* Title - show different title based on processing state */}
+              {/* Title */}
               <Text style={{
                 fontSize: '20px',
                 fontWeight: 900,
@@ -758,10 +816,10 @@ export default function BankConfirmationPage() {
                 fontFamily: '"Klavika Bold", "Klavika", Arial Black, sans-serif',
                 textShadow: '1px 1px 3px rgba(255,255,255,0.8)'
               }}>
-                {isProcessing ? 'Sedang Memproses Transaksi' : 'Konfirmasi Data Anda'}
+                {isProcessing ? 'Memproses Transaksi' : 'Konfirmasi Data Anda'}
               </Text>
 
-              {/* Selected Amount Display with processing indicator */}
+              {/* Selected Amount Display with processing indicator and timer */}
               <Box style={{
                 padding: '15px',
                 marginBottom: '10px',
@@ -806,16 +864,32 @@ export default function BankConfirmationPage() {
                   )}
                 </Box>
 
-                {/* Text Content */}
-                <Box>
-                  <Text style={{
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    color: '#8B4513',
-                    marginBottom: '2px'
+                {/* Text Content with Timer */}
+                <Box style={{ flex: 1 }}>
+                  <Box style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }}>
-                    {isProcessing ? 'MEMPROSES' : 'BONGKAR'} {formattedChipAmount}
-                  </Text>
+                    <Text style={{
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: '#8B4513',
+                      marginBottom: '2px'
+                    }}>
+                      {isProcessing ? 'MEMPROSES ' : 'BONGKAR '} {formattedChipAmount}
+                    </Text>
+                    {isProcessing && (
+                      <Text style={{
+                        fontSize: '11px',
+                        color: countdown < 60 ? '#FF4444' : '#FF69B4',
+                        fontWeight: 600,
+                        animation: countdown < 60 ? 'blink 1s infinite' : 'none'
+                      }}>
+                        ⏰ {formatTime(countdown)}
+                      </Text>
+                    )}
+                  </Box>
                   <Text style={{
                     fontSize: '12px',
                     fontWeight: 600,
@@ -1215,6 +1289,11 @@ export default function BankConfirmationPage() {
           0% { transform: scale(1); opacity: 0.7; }
           50% { transform: scale(1.2); opacity: 1; }
           100% { transform: scale(1); opacity: 0.7; }
+        }
+
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0.3; }
         }
       `}</style>
     </Box>

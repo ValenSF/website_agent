@@ -10,8 +10,8 @@ const MemoBongkarItem = memo(BongkarItem);
 
 interface SelectionGridProps {
   isValidated: boolean;
-  onTopUpClick: (amount: string, chipAmount: string) => void;
-  onBongkarClick: (amount: string, chipAmount: string) => void;
+  onTopUpClick: (amount_id: number, amount: string, chipAmount: string) => void;
+  onBongkarClick: (amount_id: number, amount: string, chipAmount: string) => void;
 }
 
 const topUpData = [
@@ -42,7 +42,7 @@ const bongkarData = [
   { image: '/img/coin.png', amount: '2400000', chipAmount: '40000', description: 'BONGKAR 40B', price: '(IDR 2.400.000)' }
 ];
 
-function TopUpGrid({ isValidated, onClick }: { isValidated: boolean; onClick: (amount: string, chipAmount: string) => void }) {
+function TopUpGrid({ isValidated, onClick }: { isValidated: boolean; onClick: (amount_id: number, amount: string, chipAmount: string) => void }) {
   useEffect(() => {
     fetchList()
   }, [])
@@ -57,13 +57,13 @@ function TopUpGrid({ isValidated, onClick }: { isValidated: boolean; onClick: (a
       const dpList = data?.data
         .filter((val: any) => val.amount > 0)  // ✅ Filter dulu
         .map((val: any) => ({
+          id: val?.id,
           image: '/img/coin.png',
           amount: val.amount.toString(),
-          chipAmount: val.display_chip_amount,
+          chipAmount: val.display_chip_amount.toString(),
           description: `TOP UP ${val.display_chip_amount}`,
           price: val.display_currency  // ✅ Correct: pakai display_currency
         }))
-
       setDpList(dpList || [])  // ✅ Fallback to empty array
     } catch (error) {
       console.log(error)
@@ -88,6 +88,7 @@ function TopUpGrid({ isValidated, onClick }: { isValidated: boolean; onClick: (a
           <MemoTopUpItem
             key={index}
             image={item.image}
+            amount_id={item?.id}
             amount={item.amount}
             topUpAmount={item.chipAmount}
             description={item.description}
@@ -106,7 +107,7 @@ function BongkarGrid({
   onClick 
 }: { 
   isValidated: boolean; 
-  onClick: (amount: string, chipAmount: string) => void;
+  onClick: (amount_id: number, amount: string, chipAmount: string) => void;
 }) {
   useEffect(() => {
     fetchList()
@@ -122,12 +123,14 @@ function BongkarGrid({
       const wdList = data?.data
         .filter((val: any) => val.wd_amount > 0)  // ✅ Filter dulu
         .map((val: any) => ({
+          id: val?.id,
           image: '/img/coin.png',
           amount: val.wd_amount.toString(),  // ✅ Correct: pakai wd_amount
-          chipAmount: val.display_chip_amount,
+          chipAmount: val.display_chip_amount.toString(),
           description: `BONGKAR ${val.display_chip_amount}`,
           price: `(IDR ${val.wd_amount.toLocaleString('id-ID')})`  // ✅ Correct: format wd_amount
         }))
+        console.log('wdlist: ', wdList)
 
       setWdList(wdList || [])  // ✅ Fallback to empty array
     } catch (error) {
@@ -151,6 +154,7 @@ function BongkarGrid({
           <MemoBongkarItem
             key={index}
             image={item.image}
+            amount_id={item?.id}
             amount={item.amount}
             chipAmount={item.chipAmount}
             description={item.description}

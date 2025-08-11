@@ -93,7 +93,7 @@ const shouldNavigateNotRegistered = (amount: string, chipAmount: string) => {
   };
 
   // ✅ Handler untuk TopUp (existing functionality)
-  const handleTopUpClick = async (topUpAmount: string, topUpValue: string) => {
+  const handleTopUpClick = async (amount_id: number, topUpAmount: string, topUpValue: string) => {
     if (!isValidated) {
       setTxtErr('Mohon lengkapi dan validasi semua field terlebih dahulu');
       setShowError(true);
@@ -119,7 +119,7 @@ const shouldNavigateNotRegistered = (amount: string, chipAmount: string) => {
     try {
       console.log('🔍 [APP] Validating Neo ID before navigation:', neoId.trim());
       
-      const amountId = apiService.getAmountId(topUpAmount);
+      const amountId = amount_id;
       const formattedPhone = apiService.formatPhoneNumber(whatsappNumber);
       
       // Call web-deposit API to validate Neo ID
@@ -177,7 +177,7 @@ const shouldNavigateNotRegistered = (amount: string, chipAmount: string) => {
   };
 
   // ✅ Complete handleBongkarClick function
-const handleBongkarClick = async (amount: string, chipAmount: string) => {
+const handleBongkarClick = async (amount_id: number, amount: string, chipAmount: string) => {
   // ✅ CHECK PERTAMA: Jika user sudah pernah klik dan mendapat not_registered response
   if (shouldNavigateNotRegistered(amount, chipAmount)) {
     console.log('🔄 [APP] User clicking again after not_registered notification, proceeding to bank-form...');
@@ -196,6 +196,7 @@ const handleBongkarClick = async (amount: string, chipAmount: string) => {
     // Navigate dengan data not registered
     navigate('/bank-form', {
       state: {
+        amount_id,
         amount,
         chipAmount,
         neoId: neoId.trim(),
@@ -263,6 +264,7 @@ const handleBongkarClick = async (amount: string, chipAmount: string) => {
       // Navigate ke bank-form dengan data lengkap
       navigate('/bank-form', {
         state: {
+          amount_id,
           amount,
           chipAmount,
           neoId: neoId.trim(),
@@ -292,6 +294,7 @@ const handleBongkarClick = async (amount: string, chipAmount: string) => {
       
       // Simpan data untuk navigate nanti jika user klik lagi
       setNotRegisteredData({
+        amount_id,
         amount,
         chipAmount,
         response: response,

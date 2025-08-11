@@ -2,16 +2,18 @@ import { Box, Text } from '@mantine/core';
 
 interface BongkarItemProps {
   image: string;
+  amount_id: number;
   amount: string;
   chipAmount: string;
   description: string;
   price: string;
   isValidated: boolean;
-  onImageClick: (amount: string, chipAmount: string) => void;
+  onImageClick: (amount_id: number, amount: string, chipAmount: string) => void;
 }
 
 export default function BongkarItem({ 
-  image, 
+  image,
+  amount_id, 
   amount,
   chipAmount,
   description, 
@@ -41,12 +43,13 @@ export default function BongkarItem({
     if (!isValidated) return;
     
     console.log('🔍 [BongkarItem] Calling onImageClick with data:', {
+      amount_id,
       amount,
       chipAmount
     });
     
     // ✅ ONLY call parent handler - let parent handle navigation and validation
-    onImageClick(amount, chipAmount);
+    onImageClick(amount_id, amount, chipAmount);
     
     // ✅ REMOVED duplicate navigation - parent will handle this
   };
