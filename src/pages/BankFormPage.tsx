@@ -328,13 +328,19 @@ export default function BankFormPage() {
   }, [savedBankAccounts]);
 
   // Function to format chip amount display
-  const formatChipAmount = (chipAmount: string) => {
-    const amount = parseInt(chipAmount);
-    if (amount >= 1000) {
-      return `${amount / 1000}B`;
-    } else {
-      return `${amount}M`;
+  const formatChipAmount = (value: string): string => {
+    const numValue = parseInt(value);
+    
+    if (numValue >= 1000) {
+      const billions = numValue / 1000;
+      if (billions % 1 === 0) {
+        return `${billions}`;
+      } else {
+        return `${billions.toFixed(1)}`;
+      }
     }
+    
+    return `${value}`;
   };
 
   const formattedChipAmount = formatChipAmount(selectedChipAmount);

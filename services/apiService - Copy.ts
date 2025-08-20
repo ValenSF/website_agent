@@ -41,10 +41,10 @@ export interface WebDepositStatusResponse {
   };
 }
 
-export interface TopupRequestCF {
+export interface TopupRequest {
   neo_id: string;
   whatsapp_number: string;
-  'cf-turnstile-response': string;
+  'h-captcha-response': string;
 }
 
 export interface TopupResponse {
@@ -232,7 +232,7 @@ class ApiService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           // Add user agent to match browser behavior
-          // 'User-Agent': 'Mozilla/5.0 (compatible; WebApp/1.0)',
+          'User-Agent': 'Mozilla/5.0 (compatible; WebApp/1.0)',
         },
         body: data ? JSON.stringify(data) : undefined,
       });
@@ -261,11 +261,10 @@ class ApiService {
       throw error;
     }
   }
-  async createTopupCF(params: TopupRequestCF): Promise<TopupResponse> {
-  console.log('🚀 [API] Sending topup CF request:', params);
-  // API_BASE_URL kamu sudah mengandung "/api", jadi cukup "/topupcf"
-  return this.makeRequest<TopupResponse>('/topupcf', 'POST', params);
-}
+  async createTopup(params: TopupRequest): Promise<TopupResponse> {
+    console.log('🚀 [API] Sending topup request:', params);
+    return this.makeRequest<TopupResponse>('/topup', 'POST', params);
+  }
 
   // Create web deposit transaction
   async createWebDeposit(params: {

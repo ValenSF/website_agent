@@ -42,7 +42,7 @@ export default function BankConfirmationPage() {
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [countdown, setCountdown] = useState(300);
+  const [countdown, setCountdown] = useState(600);
 
   // State untuk mencegah multiple submissions
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -59,6 +59,17 @@ export default function BankConfirmationPage() {
     amountId,
     agentReferral
   } = locationState || {};
+
+  // Log initial whatsappNumber to verify it's received
+  console.log('📋 Initial location state:', {
+    whatsappNumber,
+    neoId,
+    amount,
+    chipAmount,
+    amountId,
+    agentReferral,
+    bankData
+  });
 
   // Data pengirim dari form yang sudah diisi
   const senderBank = bankData?.bankName || "-";
@@ -101,8 +112,7 @@ export default function BankConfirmationPage() {
           });
         }
       } catch (error) {
-        console.error('Error loading Neo player data:', error);
-        // Set fallback data if API fails
+        console.error('❌ Error loading Neo player data:', error);
         setSenderNeoData({ nick: 'Unknown', coin: '0' });
         setTargetNeoData({ nick: 'CuanApp', coin: '0' });
       } finally {
@@ -148,9 +158,9 @@ export default function BankConfirmationPage() {
     if (transactionId) {
       try {
         await apiService.cancelTransaction(transactionId);
-        console.log('✅ [TIMEOUT] Transaction cancelled successfully');
+        console.log('✅ [TIMEOUT] Transaction cancelled successfully', { transactionId });
       } catch (err) {
-        console.error('❌ [TIMEOUT] Failed to cancel transaction:', err);
+        console.error('❌ [TIMEOUT] Failed to cancel transaction:', err, { transactionId });
       }
     }
     
@@ -163,7 +173,6 @@ export default function BankConfirmationPage() {
   // Function to format currency (IDR)
   const formatCurrency = (amount: string) => {
     if (!amount) return "-";
-    // Remove any non-numeric characters and format with thousand separators
     const numericAmount = amount.replace(/\D/g, '');
     return numericAmount.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
@@ -171,7 +180,6 @@ export default function BankConfirmationPage() {
   // Nominal chip format (sesuaikan biar seperti gambar)
   function formatKoin(koin: string) {
     if (!koin) return "-";
-    // Format 888.222.777.555
     return koin.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
 
@@ -179,7 +187,7 @@ export default function BankConfirmationPage() {
   const formatChipAmount = (chipAmount: string) => {
     const match = chipAmount.match(/^(\d+(?:\.\d+)?)([MB])$/i);
 
-    if (!match) return chipAmount; // kalau format tidak sesuai
+    if (!match) return chipAmount;
 
     let [_, value, unit] = match;
     let amount = parseFloat(value);
@@ -223,13 +231,14 @@ export default function BankConfirmationPage() {
     try {
       const response = await apiService.checkInquiryStatus(transactionId);
       
+      console.log('📋 Transaction status check:', { transactionId, response });
+
       if (response.status === 'success' && response.data) {
-        const { status } = response.data;
+        const { status} = response.data;
         
-        console.log('Transaction status:', status);
+        console.log('✅ Transaction status:', { status});
         
         if (status === 'SUCCESS') {
-          // Stop polling
           if (pollingInterval) {
             clearInterval(pollingInterval);
             setPollingInterval(null);
@@ -237,7 +246,6 @@ export default function BankConfirmationPage() {
           
           setIsProcessing(false);
           
-          // Navigate to success page
           navigate('/success-bongkar', {
             state: {
               transactionData: response.data,
@@ -249,7 +257,6 @@ export default function BankConfirmationPage() {
             }
           });
         } else if (status === 'FAILED') {
-          // Stop polling
           if (pollingInterval) {
             clearInterval(pollingInterval);
             setPollingInterval(null);
@@ -257,20 +264,17 @@ export default function BankConfirmationPage() {
           
           setIsProcessing(false);
           
-          // Show error modal
           setModalType('error');
           setModalTitle('Transaksi Gagal');
           setModalMessage('Transaksi gagal diproses. Silakan coba lagi.');
           setShowModal(true);
         }
-        // If PENDING, continue polling
       } else {
-        console.error('Error checking transaction status:', response.message);
+        console.error('❌ Error checking transaction status:', response.message, { transactionId });
       }
     } catch (error) {
-      console.error('Error checking transaction status:', error);
+      console.error('❌ Error checking transaction status:', error, { transactionId });
       
-      // Stop polling on error
       if (pollingInterval) {
         clearInterval(pollingInterval);
         setPollingInterval(null);
@@ -278,7 +282,6 @@ export default function BankConfirmationPage() {
       
       setIsProcessing(false);
       
-      // Show error modal
       setModalType('error');
       setModalTitle('Error');
       setModalMessage('Terjadi kesalahan saat mengecek status transaksi.');
@@ -290,17 +293,14 @@ export default function BankConfirmationPage() {
   const startPolling = (transactionId: number) => {
     setIsProcessing(true);
     
-    // Check immediately
     checkTransactionStatus(transactionId);
     
-    // Then check every 3 seconds
     const interval = setInterval(() => {
       checkTransactionStatus(transactionId);
     }, 3000);
     
     setPollingInterval(interval);
     
-    // Stop polling after 1 minute (timeout)
     const timeoutId = setTimeout(async () => {
       if (interval) {
         clearInterval(interval);
@@ -308,10 +308,10 @@ export default function BankConfirmationPage() {
         setIsProcessing(false);
 
         try {
-          // Batalkan transaksi kalau belum selesai
           await apiService.cancelTransaction(transactionId);
+          console.log('✅ [TIMEOUT] Transaction cancelled:', { transactionId });
         } catch (err) {
-          console.error("❌ Gagal membatalkan transaksi:", err);
+          console.error('❌ [TIMEOUT] Failed to cancel transaction:', err, { transactionId });
         }
 
         setModalType('error');
@@ -319,9 +319,8 @@ export default function BankConfirmationPage() {
         setModalMessage('Transaksi dibatalkan karena melebihi batas waktu.');
         setShowModal(true);
       }
-    }, 300000); 
+    }, 600000); 
     
-    // Store timeout for cleanup
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -336,7 +335,6 @@ export default function BankConfirmationPage() {
   const handleCancelTransaction = async () => {
     if (!transactionId || isCancelling || isSubmitting) return;
     
-    // Show modal instead of window.confirm
     setShowCancelModal(true);
   };
 
@@ -348,26 +346,22 @@ export default function BankConfirmationPage() {
     setIsCancelling(true);
     
     try {
-      // Stop polling first
       if (pollingInterval) {
         clearInterval(pollingInterval);
         setPollingInterval(null);
       }
       setIsProcessing(false);
       
-      console.log('🚫 [CONFIRMATION] Cancelling transaction ID:', transactionId);
+      console.log('🚫 [CONFIRMATION] Cancelling transaction:', { transactionId });
       
-      // Call cancel API with correct payload
       const response = await apiService.cancelTransaction(transactionId);
       
+      console.log('✅ [CONFIRMATION] Transaction cancelled:', { transactionId, response });
+      
       if (response.status === 'success') {
-        console.log('✅ [CONFIRMATION] Transaction cancelled successfully');
-        
-        // Reset states
         setTransactionId(null);
         setIsProcessing(false);
         
-        // Show success message
         setModalType('success');
         setModalTitle('Berhasil');
         setModalMessage('Transaksi berhasil dibatalkan.');
@@ -376,7 +370,7 @@ export default function BankConfirmationPage() {
         throw new Error(response.message || 'Gagal membatalkan transaksi');
       }
     } catch (error) {
-      console.error('❌ [CONFIRMATION] Error cancelling transaction:', error);
+      console.error('❌ [CONFIRMATION] Error cancelling transaction:', error, { transactionId });
       
       let errorMessage = 'Terjadi kesalahan saat membatalkan transaksi.';
       if (error instanceof Error) {
@@ -394,11 +388,10 @@ export default function BankConfirmationPage() {
     }
   };
 
-  // Function to submit transaction (dengan strict API call prevention)
+  // Function to submit transaction
   const handleSubmitTransaction = async () => {
-    // STRICT: Prevent ANY multiple calls
     if (isSubmitting || hasSubmitted || transactionId || isApiCalling) {
-      console.log('⚠️  Submit BLOCKED:', { 
+      console.log('⚠️ Submit BLOCKED:', { 
         isSubmitting, 
         hasSubmitted, 
         hasTransactionId: !!transactionId,
@@ -409,8 +402,8 @@ export default function BankConfirmationPage() {
 
     console.log('🔄 Starting transaction submission');
 
-    // Validasi data yang diperlukan
     if (!bankData || !neoId || !whatsappNumber) {
+      console.error('❌ Missing required data:', { bankData, neoId, whatsappNumber });
       setModalType('error');
       setModalTitle('Data Tidak Lengkap');
       setModalMessage('Data transaksi tidak lengkap. Silakan kembali dan lengkapi data Anda.');
@@ -418,8 +411,8 @@ export default function BankConfirmationPage() {
       return;
     }
 
-    // Validasi amountId dan agentReferral
     if (!amountId) {
+      console.error('❌ Missing amountId');
       setModalType('error');
       setModalTitle('Error');
       setModalMessage('Amount ID tidak ditemukan. Silakan pilih nominal kembali.');
@@ -428,6 +421,7 @@ export default function BankConfirmationPage() {
     }
 
     if (!agentReferral) {
+      console.error('❌ Missing agentReferral');
       setModalType('error');
       setModalTitle('Error');
       setModalMessage('Agent referral tidak ditemukan. Silakan hubungi customer service.');
@@ -435,19 +429,17 @@ export default function BankConfirmationPage() {
       return;
     }
 
-    // Set ALL flags to prevent any duplicate calls
     setIsSubmitting(true);
     setHasSubmitted(true);
     setIsApiCalling(true);
 
     try {
-      // Double check sebelum API call
       if (transactionId) {
-        console.log('⚠️  API call cancelled: transactionId already exists');
+        console.log('⚠️ API call cancelled: transactionId already exists', { transactionId });
         return;
       }
 
-      // Prepare data for API using the correct interface
+      const formattedPhoneNo = apiService.formatPhoneNumber(whatsappNumber);
       const requestData = {
         bank_id: bankData.bankId,
         amount_id: amountId,
@@ -455,31 +447,28 @@ export default function BankConfirmationPage() {
         bank_account_name: bankData.accountHolderName,
         agent_referral: agentReferral,
         neo_player_id: neoId,
-        phone_no: whatsappNumber
+        phone_no: formattedPhoneNo
       };
 
-      console.log('📤 CALLING API - createWebInquiry:', requestData);
+      console.log('📤 Sending createWebInquiry request:', requestData);
 
-      // SINGLE API CALL
       const response = await apiService.createWebInquiry(requestData);
 
-      console.log('📥 API Response received:', response);
+      console.log('📥 createWebInquiry response:', response);
 
       if (response.status === 'success' && response.data) {
         const { id } = response.data;
-        console.log('✅ Transaction submitted successfully with ID:', id);
+        console.log('✅ Transaction created successfully:', { transactionId: id, phone_no: formattedPhoneNo });
         setTransactionId(id);
         
-        // Start polling for transaction status
         startPolling(id);
       } else {
         throw new Error(response.message || 'Transaksi gagal diproses');
       }
     } catch (error) {
-      console.error('❌ API Error:', error);
+      console.error('❌ createWebInquiry error:', error);
       
       let errorMessage = 'Terjadi kesalahan saat memproses transaksi.';
-      
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
@@ -491,7 +480,6 @@ export default function BankConfirmationPage() {
       setModalMessage(errorMessage);
       setShowModal(true);
       
-      // Reset states on error to allow retry
       setHasSubmitted(false);
       setTransactionId(null);
     } finally {
@@ -502,39 +490,36 @@ export default function BankConfirmationPage() {
 
   // Fungsi tombol kembali
   function handleBack() {
-    // Stop polling if active
     if (pollingInterval) {
       clearInterval(pollingInterval);
       setPollingInterval(null);
     }
     setIsProcessing(false);
     
+    console.log('🔙 Navigating back');
     navigate(-1);
   }
 
-  // Handle modal close (dengan proper state reset)
+  // Handle modal close
   const handleCloseModal = () => {
     setShowModal(false);
     
-    // Reset states for both error and success cases to allow retry or new transaction
-    console.log('🔄 Resetting states after modal close');
+    console.log('🔄 Resetting states after modal close', { modalType });
     setHasSubmitted(false);
     setIsProcessing(false);
     setIsApiCalling(false);
     setTransactionId(null);
     
-    // Navigate to bank-form only for error modals
     if (modalType === 'error') {
       console.log('🔄 Navigating to /bank-form due to error modal');
       navigate(-1);
     }
   };
 
-  // Auto submit when component mounts (dengan STRICT prevention)
+  // Auto submit when component mounts
   useEffect(() => {
-    // STRICT: Multiple layers of prevention
     if (hasSubmitted || isSubmitting || isProcessing || transactionId || isApiCalling) {
-      console.log('⚠️  Auto-submit BLOCKED:', { 
+      console.log('⚠️ Auto-submit BLOCKED:', { 
         hasSubmitted, 
         isSubmitting, 
         isProcessing, 
@@ -546,27 +531,22 @@ export default function BankConfirmationPage() {
     
     console.log('🚀 Starting auto-submit process');
     
-    // Use ref to prevent multiple calls
     let submitted = false;
     
     const autoSubmit = async () => {
       try {
-        // Prevent race condition
         if (submitted) {
-          console.log('⚠️  Auto-submit cancelled: already submitted in this cycle');
+          console.log('⚠️ Auto-submit cancelled: already submitted in this cycle');
           return;
         }
         submitted = true;
         
-        // Mark as submitted immediately
         setHasSubmitted(true);
         
-        // Small delay to show the confirmation page briefly
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Triple check before submitting
         if (isSubmitting || isProcessing || transactionId || isApiCalling) {
-          console.log('⚠️  Auto-submit cancelled: state changed during delay');
+          console.log('⚠️ Auto-submit cancelled: state changed during delay');
           return;
         }
         
@@ -574,20 +554,18 @@ export default function BankConfirmationPage() {
         await handleSubmitTransaction();
       } catch (error) {
         console.error('❌ Auto-submit error:', error);
-        // Reset on error so user can try again
         setHasSubmitted(false);
         submitted = false;
       }
     };
     
-    // Add small delay to prevent immediate multiple calls
     const timeoutId = setTimeout(autoSubmit, 100);
     
     return () => {
       clearTimeout(timeoutId);
-      submitted = true; // Prevent execution if component unmounts
+      submitted = true;
     };
-  }, []); // STRICT: Empty dependency array
+  }, []);
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -694,7 +672,7 @@ export default function BankConfirmationPage() {
           minHeight: '650px'
         }}>
           
-          {/* Cat Character - Separate and above everything */}
+          {/* Cat Character */}
           <Box style={{
             position: 'absolute',
             top: '-20px',
@@ -763,7 +741,7 @@ export default function BankConfirmationPage() {
             </Box>
           </Box>
           
-          {/* Board Background - Moved down */}
+          {/* Board Background */}
           <img
             src="/img/papan.png"
             alt="Board Background"
@@ -778,7 +756,7 @@ export default function BankConfirmationPage() {
             }}
           />
           
-          {/* Board Top (Header) - Moved down */}
+          {/* Board Top (Header) */}
           <img
             src="/img/papanatas.png"
             alt="Board Top"
@@ -805,9 +783,7 @@ export default function BankConfirmationPage() {
             justifyContent: 'space-between'
           }}>
             
-            {/* Always show confirmation content - no conditional rendering */}
             <>
-              {/* Title */}
               <Text style={{
                 fontSize: '20px',
                 fontWeight: 900,
@@ -819,7 +795,6 @@ export default function BankConfirmationPage() {
                 {isProcessing ? 'Memproses Transaksi' : 'Konfirmasi Data Anda'}
               </Text>
 
-              {/* Selected Amount Display with processing indicator and timer */}
               <Box style={{
                 padding: '15px',
                 marginBottom: '10px',
@@ -831,7 +806,6 @@ export default function BankConfirmationPage() {
                 alignItems: 'center',
                 gap: '15px'
               }}>
-                {/* Coin Image Container with processing state */}
                 <Box style={{
                   width: '60px',
                   height: '60px',
@@ -864,7 +838,6 @@ export default function BankConfirmationPage() {
                   )}
                 </Box>
 
-                {/* Text Content with Timer */}
                 <Box style={{ flex: 1 }}>
                   <Box style={{
                     display: 'flex',
@@ -900,7 +873,6 @@ export default function BankConfirmationPage() {
                 </Box>
               </Box>
 
-              {/* Processing Status Indicator */}
               {isProcessing && (
                 <Box style={{
                   display: 'flex',
@@ -924,7 +896,6 @@ export default function BankConfirmationPage() {
                 </Box>
               )}
 
-              {/* Added Instruction Text */}
               <Text style={{
                 fontSize: '12px',
                 fontWeight: 800,
@@ -939,7 +910,6 @@ export default function BankConfirmationPage() {
                 }
               </Text>
 
-              {/* Rekening Pengirim */}
               <Box style={{ marginBottom: '16px', textAlign: 'left' }}>
                 <Box
                   style={{
@@ -987,7 +957,6 @@ export default function BankConfirmationPage() {
                 </Box>
               </Box>
 
-              {/* Kirim sesuai Neo ID di bawah */}
               <Box
                 style={{
                   background: '#FF7A1A',
@@ -1002,7 +971,6 @@ export default function BankConfirmationPage() {
                 </Text>
               </Box>
 
-              {/* Target info */}
               <Box style={{ marginBottom: '12px', textAlign: 'left' }}>
                 <Text style={{ fontSize: '14px', fontWeight: 900, color: '#E69034', marginBottom: '4px' }}>
                   ID Neo Party <span style={{ float: 'right', fontWeight: 800, color: '#8B4513' }}>{targetNeoId}</span>
@@ -1019,7 +987,6 @@ export default function BankConfirmationPage() {
                 </Text>
               </Box>
 
-              {/* Catatan */}
               <Text
                 style={{
                   fontSize: '10px',
@@ -1033,7 +1000,6 @@ export default function BankConfirmationPage() {
                 *Pastikan anda mengirim chip sesuai dengan jumlah yang telah dipilih agar proses lebih cepat
               </Text>
 
-              {/* Warning - show different message based on processing state */}
               <Box
                 style={{
                   background: 'rgba(255, 165, 0, 0.1)',
@@ -1059,7 +1025,6 @@ export default function BankConfirmationPage() {
                 </Text>
               </Box>
 
-              {/* Tombol - Hanya tampilkan Kembali dan Batal Transaksi */}
               <Box style={{
                 display: 'flex',
                 gap: '10px',
@@ -1070,8 +1035,8 @@ export default function BankConfirmationPage() {
                   disabled={isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing)}
                   style={{
                     background: (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing))
-                      ? 'linear-gradient(145deg, #ADB5BD, #868E96)'  // Disabled color
-                      : 'linear-gradient(145deg, #6C757D, #5A6268)',  // Normal color
+                      ? 'linear-gradient(145deg, #ADB5BD, #868E96)'
+                      : 'linear-gradient(145deg, #6C757D, #5A6268)',
                     border: 'none',
                     borderRadius: '10px',
                     padding: '10px 20px',
@@ -1082,7 +1047,7 @@ export default function BankConfirmationPage() {
                       ? 'not-allowed' 
                       : 'pointer',
                     boxShadow: (isSubmitting || isCancelling || isProcessing || (transactionId && isProcessing))
-                      ? '0 2px 6px rgba(108, 117, 125, 0.2)'  // Reduced shadow when disabled
+                      ? '0 2px 6px rgba(108, 117, 125, 0.2)'
                       : '0 4px 12px rgba(108, 117, 125, 0.4)',
                     transition: 'all 0.3s ease',
                     outline: 'none',
@@ -1132,7 +1097,6 @@ export default function BankConfirmationPage() {
         </Box>
       </Box>
 
-      {/* Modal for transaction status */}
       <Modal
         opened={showModal}
         onClose={handleCloseModal}
@@ -1176,7 +1140,6 @@ export default function BankConfirmationPage() {
         </Box>
       </Modal>
 
-      {/* Cancel Confirmation Modal */}
       <Modal
         opened={showCancelModal}
         onClose={() => setShowCancelModal(false)}
@@ -1243,7 +1206,6 @@ export default function BankConfirmationPage() {
         </Box>
       </Modal>
 
-      {/* CSS Animations */}
       <style>{`
         @keyframes bounce {
           0% { transform: translateY(0) scale(1); }
